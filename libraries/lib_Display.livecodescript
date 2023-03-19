@@ -23,6 +23,72 @@ You can "view" this library as contaminated :)
 
 --> Working on
 -
+function stack_FindNames nameStem
+   -- could use filter
+   put revLoadedStacks ("application") into loadedStackNames
+   repeat for each line stackName in loadedStackNames
+      if stackName begins with nameStem then
+         put stackName & CR after foundStackNames
+      end if
+   end repeat
+   delete char -1 of foundStackNames
+   return foundStackNames
+end stack_FindNames
+
+function display_FindStackNameArray pSearchStackLabel, pSearchViewTitle, pPretty
+   -- looks for Dispay Array, and Display Index views
+   put revLoadedStacks ("application") into dStackNames
+   repeat for each line dStackName in dStackNames
+      get word 1 to 2 of dStackName
+      if it is not among the items of "Display Index,Display Array" then next repeat
+      
+      put the long id of group 1 of stack dStackName into displayView
+      --
+      put the title_text of displayView into titleText
+      put the label of stack dStackName into stackLabel
+      
+      -- skip unless the following conditions are met
+      if pSearchStackLabel is empty then
+         put displayView into displayViewArray [dStackName]["displayView"]
+         put stackLabel into displayViewArray [dStackName]["stackLabel"]
+         put titleText into displayViewArray [dStackName]["titleText"]
+      else if stackLabel = pSearchStackLabel then
+         if pSearchViewTitle is empty then
+            put displayView into displayViewArray [dStackName]["displayView"]
+            put stackLabel into displayViewArray [dStackName]["stackLabel"]
+            put titleText into displayViewArray [dStackName]["titleText"]
+         else if titleText = pSearchViewTitle then
+            put displayView into displayViewArray [dStackName]["displayView"]
+            put stackLabel into displayViewArray [dStackName]["stackLabel"]
+            put titleText into displayViewArray [dStackName]["titleText"]
+         end if
+      end if
+   end repeat
+   --
+   if pPretty is true then
+      put _MakeStackNameArrayPretty (displayViewArray) into prettyArray
+      return prettyArray
+   else
+      return displayViewArray
+   end if
+end display_FindStackNameArray
+
+function display_GetLibObject pLibName, pLineNum
+   put debug_CallingObject (2) into libObject
+   if pLibName is empty then
+   end if
+   return libObject
+end display_GetLibObject
+
+private function debug_CallingObject pNum
+   -- need to remove reliance on the executioncontexts
+   if pNum is empty then put 2 into pNum
+   put (pNum + 2) * -1 into lineNum
+   get the executioncontexts
+   put item 1 of line lineNum of it into callingObject
+   return callingObject
+end debug_CallingObject
+
 
 --> Display | Objects
 -
@@ -83,44 +149,6 @@ function stack_FindNameData pSearchStackLabel, pTestProperty
    end repeat
    return stackNameData
 end stack_FindNameData
-
-function display_FindStackNameArray pSearchStackLabel, pSearchViewTitle, pPretty
-   -- looks for Dispay Array, and Display Index views
-   put revLoadedStacks ("application") into dStackNames
-   repeat for each line dStackName in dStackNames
-      get word 1 to 2 of dStackName
-      if it is not among the items of "Display Index,Display Array" then next repeat
-      
-      put the long id of group 1 of stack dStackName into displayView
-      --
-      put the title_text of displayView into titleText
-      put the label of stack dStackName into stackLabel
-      
-      -- skip unless the following conditions are met
-      if pSearchStackLabel is empty then
-         put displayView into displayViewArray [dStackName]["displayView"]
-         put stackLabel into displayViewArray [dStackName]["stackLabel"]
-         put titleText into displayViewArray [dStackName]["titleText"]
-      else if stackLabel = pSearchStackLabel then
-         if pSearchViewTitle is empty then
-            put displayView into displayViewArray [dStackName]["displayView"]
-            put stackLabel into displayViewArray [dStackName]["stackLabel"]
-            put titleText into displayViewArray [dStackName]["titleText"]
-         else if titleText = pSearchViewTitle then
-            put displayView into displayViewArray [dStackName]["displayView"]
-            put stackLabel into displayViewArray [dStackName]["stackLabel"]
-            put titleText into displayViewArray [dStackName]["titleText"]
-         end if
-      end if
-   end repeat
-   --
-   if pPretty is true then
-      put _MakeStackNameArrayPretty (displayViewArray) into prettyArray
-      return prettyArray
-   else
-      return displayViewArray
-   end if
-end display_FindStackNameArray
 
 
 --> Props
@@ -191,7 +219,7 @@ end stack_BelowRect
 
 --> Display | Menu | AskCreate
 -
-command display_SetMenu displayView, gMenuTitle, pMenuProp
+command display_SetMenu displayView, gMenuTitle, pMenuProp, pLibName
    -- put word 1 to -1 of gMenuTitle into gMenuTitle
    if not (gMenuTitle begins with "Global | ") then 
       put "Global | " before gMenuTitle
@@ -203,20 +231,20 @@ command display_SetMenu displayView, gMenuTitle, pMenuProp
    if pMenuProp is empty then put "title_Menu" into pMenuProp
    --
    set the pMenuProp of displayView to gMenuTitle
-   put debug_CallingObject (2) into libObject
+   put display_GetLibObject (pLibName, 2) into libObject
    ask_CreateMenuFromObject gMenuTitle, libObject
    --
    return libObject
 end display_SetMenu
 
-command display_SetInteractions displayView, menuBit, pDoubleUp
+command display_SetInteractions displayView, menuBit, pDoubleUp, pLibName
    put "Global |" && menuBit && "| Menu" into titleMenu
    put "Global |" && menuBit && "| Line | Menu" into lineMenu
    --
    set the title_Menu of displayView to titleMenu
    set the line_Menu of displayView to lineMenu
    --
-   put debug_CallingObject (2) into libObject
+   put display_GetLibObject (pLibName, 2) into libObject
    ask_CreateMenuFromObject titleMenu, libObject
    ask_CreateMenuFromObject lineMenu, libObject
    --
@@ -778,14 +806,6 @@ private function _MakeStackNameArrayPretty displayViewArray
    end repeat
    return prettyArray
 end _MakeStackNameArrayPretty
-
-private function debug_CallingObject pNum
-   if pNum is empty then put 2 into pNum
-   put (pNum + 2) * -1 into lineNum
-   get the executioncontexts
-   put item 1 of line lineNum of it into callingObject
-   return callingObject
-end debug_CallingObject
 
 private command _setTitles @widgetDisplayTitle, @displayStackLabel, pDisplayTitle, pDefault
    if pDisplayTitle is empty then

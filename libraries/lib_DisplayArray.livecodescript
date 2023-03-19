@@ -54,6 +54,7 @@ command display_SetToolMenus menuBit, dView, pProjectName
    if there is a stack pProjectName then
       put the name of stack pProjectName into libObject
    else
+      -- breakpoint -- remove reliance on the executioncontexts
       put debug_CallingObject(2) into libObject
    end if
    ask_CreateMenuFromObject titleMenu, libObject

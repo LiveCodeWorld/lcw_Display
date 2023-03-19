@@ -18,14 +18,24 @@ local LocalArray
 --> Menu | Props
 -
 getprop menu_Target [tObject]
-   put the card_Object of tObject into cardObject
-   get the name of cardObject
-   return cardObject
+   put the display_View of tObject into displayView
+   put the stack_Name of tObject into stackName
+   switch
+      case word 1 of stackName = "revNewScriptEditor"
+         put scriptEditor_Object() into sObject
+         return sObject
+      case exists (the displayed_Object of displayView)
+         put the displayed_Object of displayView into sObject
+         return sObject
+      case exists (displayView)
+         breakpoint
+         return displayView
+      default
+         put the card_Object of tObject into cardObject
+         get the name of cardObject
+         return cardObject
+   end switch
 end menu_Target
-
-getprop menu_CheckTarget [cardObject]
-   return exists (cardObject)
-end menu_CheckTarget
 
 on ChangeCardBehavior cardObject, bName
    -- sent by "menu_SetCardBehavior" so can change teh script of an executing script
@@ -101,7 +111,7 @@ private command ___
 end ___
 
 on menu_LayoutCard cardObject
-   dispatch "LayoutControl" to cardObject
+   dispatch "LayoutCard" to cardObject
 end menu_LayoutCard
 
 on menu_InsertPlaceHolder cardObject
