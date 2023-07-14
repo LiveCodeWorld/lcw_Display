@@ -5,13 +5,33 @@ copyright: David Bovill
 license: GPLv3
 name: lib_DisplayArray
 type: library
-version: 0.1
+version: 0.2
 
-/*Some help*/
+/*
+This library is designed to work with the index and array view to display data.
+It tries to use the array view to displlay lines in some instances
+but uses "display_Lines" for simple display of lines.
+
+We probably want to bring these together into one view with the ability to display in a vield or a tree widget.
+*/
+
+--> Variables
+-
+constant ArrayViewName = "View|Tree|Widget with Title"
 
 
 --> Working on
 -
+command display_ArrayIndex indexArray, pIndexKey, pTitle, pStackLabel, pDisplayView
+   -- see lib_ArrayIndex
+   put indexArray_Names (indexArray, pIndexKey) into sLines
+   display_Data sLines, pTitle, pStackLabel, pDisplayView
+   put the result into displayView
+   --
+   set the view_Data of displayView to indexArray
+   return displayView
+end display_ArrayIndex
+
 command ask_CreateMouseDoubleUpHandler mDoubleUp, titleController
    put "M" && mDoubleUp into shortHKey
    put the found_Hkey [shortHKey] of titleController is not empty into handlerExists
@@ -163,31 +183,11 @@ function display_FindIndexView displayStackLabel, pDisplayViewTitle
    return display_FindView (displayStackLabel, pDisplayViewTitle, "Display Index")
 end display_FindIndexView
 
-function display_FindView displayStackLabel, pDisplayViewTitle, pTypes
-   -- Looks for Display Array, and Display Index views depending on pTypes
-   if pTypes is empty then put "Display Index,Display Array" into pTypes
-   
-   put revLoadedStacks ("application") into dStackNames
-   repeat for each line dStackName in dStackNames
-      get word 1 to 2 of dStackName
-      if it is not among the items of pTypes then next repeat
-      if the label of stack dStackName = displayStackLabel then
-         put the long id of group 1 of stack dStackName into displayView
-         if pDisplayViewTitle is empty then
-            return displayView
-         else if the title_Text of displayView = pDisplayViewTitle then
-            return displayView
-         end if
-      end if
-   end repeat
-   return empty
-end display_FindView
-
 
 --> Private
 -
 private command _CreateInvisibleData someArray, pDisplayTitle, pStackLabel, pFoldedArray, pLocOrRect, pPalette
-   put "View|Tree|Widget with Title" into viewName
+   put ArrayViewName into viewName
    if pDisplayTitle is empty then put "Array" into pDisplayTitle
    
    -- clone invisible

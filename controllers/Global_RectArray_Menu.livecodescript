@@ -7,27 +7,6 @@ name: Global | RectArray | Menu
 type: controller
 version: 0.1
 
-/*
-on menu_RestoreRectArrayData cardObject, restoreHow
-   put the rectArray_Data of cardObject into rectArray
-   --
-   -- put the shiftKey is "Down" into sBoolean
-   -- set the rectArray_Restore [sBoolean] of cardObject to rectArray
-   set the rectArray_Restore of cardObject to restoreHow
-   --
-   display_RectArray cardObject
-end menu_RestoreRectArrayData
-
-on menu_StoreCustom cardObject
-   put lcw_Ask("Custom name to store", "ring_NumberOfPoints") into propName
-   put lcw_Ask("Default custom prop value  to store", propValue) into propValue
-   --
-   rectArray_StoreCustom propName, propValue, cardObject
-   --
-   display_RectArray cardObject
-end menu_StoreCustom
-*/
-
 
 --> Variables
 -
@@ -48,6 +27,7 @@ getprop menu_Target [tObject]
    put the rectArray_ListControlNames of cardObject into vNames
    put vNames into LocalArray ["viewNames"]
    --
+   put the displayed_RectDataNum [true] of cardObject into LocalArray ["dRectDataNum"]
    put the displayed_ObjectNames of cardObject into LocalArray ["objectNames"]
    --
    return cardObject
@@ -63,58 +43,52 @@ private function _ObjectFromName cName, cardObject
    return tObject
 end _ObjectFromName
 
-getprop setGeometryTitle_Params
-   return LocalArray ["rectArrayNames"]
-   return "1,2,3"
-end setGeometryTitle_Params
-
-getprop storeGeometry_Params
-   return "1,2,3,-,add"
-end storeGeometry_Params
-
-getprop restoreGeometry_Param [cardObject]
-   put rectData [itemNum]["meta"]["title"] into sTitle
-   if sTitle is empty then put itemNum into sTitle
-   
-   get the displayed_RectDataNum [true] of cardObject
-   return it
-end restoreGeometry_Param
-
-getprop restoreGeometry_Params
-   return LocalArray ["rectArrayNames"]
-   return "1,2,3"
-   return LocalArray ["restoreHows"]
-end restoreGeometry_Params
-
-getprop deleteGeometry_Params
-   return "1,2,3,-,all"
-end deleteGeometry_Params
-
-getprop storeRectArrayData_Params
-   return "1,2,3"
-end storeRectArrayData_Params
-
-getprop displayRectArray_Params [cardObject]
-   return the rectArray_Names of cardObject
-end displayRectArray_Params
-
-getprop animateView_Params
-   -- return "1,2,3"
-   return LocalArray ["viewNames"]
-end animateView_Params
-
-getprop animateAll_Params
-   return "1,2,3"
-end animateAll_Params
-   
-getprop testMove_Params [cardObject]
-   return LocalArray ["objectNames"] & ",-,all"
-end testMove_Params
-
 getprop checked_ScaleProportional [cardObject]
    put the scale_Proportional of cardObject into sBoolean
    return sBoolean
 end checked_ScaleProportional
+
+getprop setGeometryTitle_Param [cardObject]
+   return LocalArray ["dRectDataNum"]
+end setGeometryTitle_Param
+
+getprop setGeometryTitle_Params
+   return LocalArray ["rectArrayNames"]
+end setGeometryTitle_Params
+
+getprop storeGeometry_Param [cardObject]
+   return LocalArray ["dRectDataNum"]
+end storeGeometry_Param
+
+getprop storeGeometry_Params
+   return LocalArray ["rectArrayNames"] & ",-,add"
+end storeGeometry_Params
+
+getprop restoreGeometry_Param [cardObject]
+   return LocalArray ["dRectDataNum"]
+end restoreGeometry_Param
+
+getprop restoreGeometry_Params
+   return LocalArray ["rectArrayNames"]
+end restoreGeometry_Params
+
+getprop deleteGeometry_Param [cardObject]
+   return LocalArray ["dRectDataNum"]
+end deleteGeometry_Param
+
+getprop deleteGeometry_Params
+   -- return LocalArray ["rectArrayNames"]
+   return LocalArray ["rectArrayNames"] & ",-,all"
+end deleteGeometry_Params
+
+getprop animateAllScaled_Param [cardObject]
+   return LocalArray ["dRectDataNum"]
+end animateAllScaled_Param
+
+getprop animateAllScaled_Params
+   return LocalArray ["rectArrayNames"]
+   return "1,2,3"
+end animateAllScaled_Params
 
 
 --> Global | RectArray | Menu
@@ -124,46 +98,17 @@ on menu_ScaleProportional cardObject
    set the scale_Proportional of cardObject to (sBoolean is false)
 end menu_ScaleProportional
 
-private command _____
-end _____
+on menu_AnimateAllScaled cardObject, indexNum
+   set the rectArray_AnimateScaled of cardObject to indexNum
+end menu_AnimateAllScaled
 
-on menu_AnimateAll cardObject, indexNum
-   set the rectArray_Animate of cardObject to indexNum
-end menu_AnimateAll
-
-on menu_AnimateView cardObject, cName
-   put _ObjectFromName (cName, cardObject) into tObject
-   put the rectArray_Rects of tObject into rectIndex
-   
-   set the rect of tObject to line 1 of rectIndex
-   put line 2 of rectIndex into newRect
-   aeChangeRect tObject, newRect, 2000, "inOut"
-end menu_AnimateView
-
-private command _
+private on _
 end _
-
-on menu_TestMove cardObject, cName
-   put "100,100,500,500" into targetFrameRect
-   put the scale_Proportional of cardObject into scaleProportionally
-   --
-   if cName = "all" then
-      transform_Card cardObject, targetFrameRect, true, scaleProportionally
-   else
-      put _ObjectFromName (cName, cardObject) into tObject
-      transform_MoveObject tObject, targetFrameRect, scaleProportionally
-   end if
-end menu_TestMove
 
 on menu_RestoreGeometry cardObject, itemNum
    set the displayed_RectDataNum of cardObject to itemNum
    put the result into rectArray
-   --
-   -- display_RectArray rectArray, indexNum
 end menu_RestoreGeometry
-
-private command __
-end __
 
 on menu_StoreGeometry cardObject, indexNum
    put the rect_Array of cardObject into rectArray
@@ -192,20 +137,8 @@ on menu_DeleteGeometry cardObject, itemNum
    display_RectData cardObject
 end menu_DeleteGeometry
 
-private command ___
-end ___
-
-on menu_LayoutCard cardObject
-   dispatch "LayoutCard" to cardObject
-end menu_LayoutCard
-
-on menu_LayoutViews cardObject
-   put the displayed_Views of cardObject into viewIndex
-   repeat for each line someView in viewIndex
-      get the name of someView
-      dispatch "LayoutControl" to someView
-   end repeat
-end menu_LayoutViews
+private on __
+end __
 
 on menu_SetGeometryTitle cardObject, itemNum
    put the rectData_Title [itemNum] of cardObject into sTitle
@@ -215,15 +148,9 @@ on menu_SetGeometryTitle cardObject, itemNum
    display_RectData cardObject
 end menu_SetGeometryTitle
 
-private command ____
-end ____
+private on ___
+end ___
 
-on menu_DisplayRectArray cardObject, arrayName
-   put the rect_Data [arrayName] of cardObject into rectArray
-   --
-   display_RectArray rectArray, arrayName
-end menu_DisplayRectArray
-
-on menu_DisplayRectData cardObject
-   display_RectData cardObject
-end menu_DisplayRectData
+on submenu_Test
+   return "Global | RectArray | Test | Menu"
+end submenu_Test

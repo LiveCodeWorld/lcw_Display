@@ -12,6 +12,292 @@ version: 0.1
 
 --> Working on
 -
+
+--> Working on | Extents
+-
+private command _RestoreRects objectArray
+   put the keys of objectArray into layerNums
+   sort numeric layerNums
+   repeat for each line itemNum in layerNums
+      -- repeat with itemNum = 1 to item 2 of the extents of objectArray -- layers may skip
+      put objectArray [itemNum]["control"] into sObject
+      if exists (sObject) is false then
+         -- allows deleting of ordered items without having to reindex rectArray
+         next repeat
+      end if
+      --
+      put objectArray [itemNum]["rect"] into sRect
+      if sRect is a rect then -- should not be necessary
+         set the rect of sObject to sRect
+      end if
+   end repeat
+end _RestoreRects
+
+private function _ListObjects cArray
+   put the keys of cArray into layerNums
+   sort numeric layerNums
+   repeat for each line itemNum in layerNums
+      -- repeat with itemNum = 1 to item 2 of the extents of cArray
+      put cArray [itemNum] into objectArray
+      put objectArray ["control"] into sObject
+      if sObject is not empty then
+         put sObject & CR after objectIndex
+      end if
+   end repeat
+   delete char -1 of objectIndex
+   return objectIndex
+end _ListObjects
+
+private function _ListViewControlNames cArray
+   put the keys of cArray into layerNums
+   sort numeric layerNums
+   repeat for each line itemNum in layerNums
+      -- repeat with itemNum = 1 to item 2 of the extents of cArray
+      put cArray [itemNum]["name"] into cName
+      if cName is empty then next repeat
+      --
+      if cName is among the lines of cNames then
+         put viewArray [itemNum]["control"] into rObject
+         put word 1 to 3 of rObject into cName
+      end if
+      --
+      put cName & CR after cNames
+   end repeat
+   delete char -1 of cNames
+   return cNames
+end _ListViewControlNames
+
+function rectArray_FindObjectArray rectArray, tObject
+   -- an object should only be listed in one section
+   -- not searching target?
+   
+   put revRuggedId (tObject) into rObject
+   repeat for each item oType in "views,controls"
+      put rectArray [oType] into cArray
+      --
+      put the keys of cArray into layerNums
+      sort numeric layerNums
+      repeat for each line itemNum in layerNums
+         -- repeat with itemNum = 1 to item 2 of the extents of cArray
+         put cArray [itemNum] into objectArray
+         put objectArray ["control"] into testObject
+         if testObject = rObject then
+            return objectArray
+         end if
+      end repeat
+   end repeat
+   return empty
+end rectArray_FindObjectArray
+
+
+--> Animated
+-
+setprop rectArray_AnimateScaled [pScaleProportionally] indexOrName
+   -- animate to scaled rect
+   put the card_Object of the target into cardObject
+   put the rect of cardObject into tFrameRect
+   put the rect_Data of cardObject into rectData
+   --
+   put _GetRectArray (indexOrName, rectData) into rectArray
+   put rectArray_ListObjects (rectArray) into objectIndex
+   set the uRIP["displayed_RectDataNum"] of cardObject to indexOrName
+   --
+   put rectArray ["target"]["rect"] into oCardRect
+   repeat for each line tObject in objectIndex
+      put the rectArray_Rects of tObject into rectIndex
+      --
+      put line indexOrName of rectIndex into oRect
+      put rect_TransformFromOrigin (oRect, oCardRect, tFrameRect, pScaleProportionally) into sRect
+      rect_Normalise sRect -- for animationEngine
+      --
+      aeChangeRect tObject, sRect, 1000, "inOut"
+   end repeat
+   --
+   return true
+end rectArray_AnimateScaled
+
+function rectData_FindTitle sTitle, rectData
+   repeat with itemNum = 1 to item 2 of the extents of rectData
+      put rectData [itemNum]["meta"]["title"] into tName
+      if tName = sTitle then
+         return itemNum
+      end if
+   end repeat
+   return 0
+end rectData_FindTitle
+
+
+--> Model | RectArray
+-
+-- private command _NormalizeIndexNum @nameOrNum, rectData
+switch
+   case nameOrNum is empty
+      return false
+   case nameOrNum is a number
+      return true
+   default
+      put rectData_FindTitle (nameOrNum, rectData) into nameOrNum
+      return true
+end switch
+end _NormalizeIndexNum
+
+getprop rect_Array [idList]
+   put the long id of the target into tObject
+   --
+   _AddTargetMeta rectArray, tObject
+   _AddStackMeta rectArray
+   
+   if idList is empty then
+      # Use topviews to not index elements inside
+      _AddTopViews rectArray
+      put the result into viewArrray
+      _AddControls rectArray
+   else
+      repeat for each item cID in idList
+         if exists (control id cID of tObject) is false then
+            breakpoint
+            next repeat
+         end if
+         --
+         put the rugged_ID of control id cID of tObject into rObject
+         put the layer of rObject into layerNum
+         put the view_Name of rObject into vName
+         --
+         if vName is empty then
+            _SetRectArray rectArray, "controls", layerNum, rObject    
+         else
+            put vName into rectArray ["views"][layerNum]["view"]
+            _SetRectArray rectArray, "views", layerNum, rObject
+         end if         
+      end repeat
+   end if
+   --
+   return rectArray
+end rect_Array
+
+
+--> Model | RectData
+-
+getprop rect_MetaArray [indexOrName]
+   put the rect_Data [indexOrName] of the target into rectArray
+   return rectArray ["meta"]
+end rect_MetaArray
+
+setprop rect_MetaArray [indexOrName] mArray
+   put the rect_Data [indexOrName] of the target into rectArray
+   put mArray into rectArray ["meta"]
+   return rectArray
+end rect_MetaArray
+
+getprop rect_Data [indexOrName]
+   put the rectArray_Data of the target into rectData
+   return _GetRectArray (indexOrName, rectData)
+end rect_Data
+
+private function _GetRectArray @indexOrName, rectData
+   switch
+      case indexOrName is empty
+         return rectData
+      case indexOrName is a number
+         return rectData [indexOrName]
+      default
+         put rectData_FindTitle (indexOrName, rectData) into itemNum
+         put itemNum into indexOrName
+         if itemNum = 0 then
+            return empty
+         else
+            return rectData [itemNum]
+         end if
+   end switch
+end _GetRectArray
+
+setprop rect_Data [indexOrName] sArray
+   switch
+      case indexOrName is empty
+         set the rectArray_Data of the target to sArray
+         return rectData
+      case indexOrName is a number
+         put the rectArray_Data of the target into rectData
+         if sArray is empty then
+            delete variable rectData [indexOrName]
+         else
+            put sArray into rectData [indexOrName]
+         end if
+         set the rectArray_Data of the target to rectData
+         return rectData
+      default
+         put the rectArray_Data of the target into rectData
+         put rectData_FindTitle (indexOrName, rectData) into itemNum
+         if itemNum is not a number then
+            return empty
+         else
+            if sArray is empty then
+               delete variable rectData [itemNum]
+            else
+               put sArray into rectData [itemNum]
+            end if
+            set the rectArray_Data of the target to rectData_ListRects(rectData, tObject)
+         end if
+   end switch
+end rect_Data
+
+setprop rectData_Add [sTitle] sArray
+   put sTitle into sArray ["meta"]["title"]
+   --  
+   put the rectArray_Data of the target into rectData
+   --
+   put rectData_FindTitle (sTitle, rectData) into itemNum
+   if itemNum = 0 then
+      # Add to the end
+      put item 2 of the extents of rectData + 1 into itemNum
+   end if
+   --
+   put sArray into rectData [itemNum]
+   set the rect_Data of the target to rectData
+   return itemNum
+end rectData_Add
+
+
+--> Transform
+-
+command transform_CardScaled cardObject, pScaleProportionally, pIndexNum
+   -- set to scaled rect
+   if pScaleProportionally is empty then put the scale_Proportional of cardObject into pScaleProportionally
+   if pIndexNum is empty then put the displayed_RectDataNum of cardObject into pIndexNum
+   if pIndexNum is not a number then put 1 into pIndexNum
+   --
+   put the rect_Data [pIndexNum] of cardObject into rectArray
+   put rectArray_ListObjects (rectArray) into objectIndex
+   --
+   put the rect of cardObject into tFrameRect
+   put rectArray ["target"]["rect"] into oCardRect
+   
+   repeat for each line tObject in objectIndex
+      put the rectArray_Rects of tObject into rectIndex
+      --
+      put line pIndexNum of rectIndex into oRect
+      put rect_TransformFromOrigin (oRect, oCardRect, tFrameRect, pScaleProportionally) into sRect
+      --
+      set the rect of tObject to sRect
+   end repeat
+   return rectArray
+end transform_CardScaled
+
+setprop rectArray_Animate indexNum
+   -- animate to stored rect
+   put the rect_Data [indexNum] of the target into rectArray
+   put rectArray_ListObjects (rectArray) into objectIndex
+   
+   -- aeLockMoves
+   repeat for each line tObject in objectIndex
+      put the rectArray_Rects of tObject into rectIndex
+      --
+      put line indexNum of rectIndex into sRect
+      aeChangeRect tObject, sRect, 1000, "inOut"
+   end repeat
+   return rectArray
+end rectArray_Animate
+
 getprop displayed_RectDataNum [pUseTitle]
    put the card_Object of the target into cardObject
    --
@@ -59,7 +345,7 @@ getprop transformed_Rect [targetFrameRect]
    put the card_Object of tObject into cardObject
    --
    put the displayed_RectArray of cardObject into rectArray 
-   put transform_GetRect (rectArray, tObject, targetFrameRect, pScaleProportionally) into transformedRect
+   put transform_RectFromOrigin (rectArray, tObject, targetFrameRect, pScaleProportionally) into transformedRect
    return transformedRect
 end transformed_Rect
 
@@ -69,11 +355,45 @@ setprop transformed_BoundingRect [pScaleProportionally] targetFrameRect
    put the card_Object of tObject into cardObject
    put the displayed_RectArray of cardObject into pRectArray
    --
-   put transform_GetRect (pRectArray, tObject, targetFrameRect, pScaleProportionally) into transformedRect
+   put transform_RectFromOrigin (pRectArray, tObject, targetFrameRect, pScaleProportionally) into transformedRect
    --
    set the rect of tObject to transformedRect
    return objectArray
 end transformed_BoundingRect
+
+function transform_RectFromOrigin rectArray, tObject, targetFrameRect, pScaleProportionally
+   -- Transformed means "scaled and translated"
+   -- We assume "target" "rect" is a card so has 0,0 topleft
+   
+   # No need to Translate
+   put rectArray ["target"]["rect"] into oCardRect
+   put rectArray_FindObjectArray (rectArray, tObject) into objectArray
+   put objectArray ["rect"] into oRect -- original object rect
+   
+   put rect_TransformFromOrigin (oRect, oCardRect, targetFrameRect, pScaleProportionally) into transformedRect
+   rect_Normalise transformedRect -- for animationEngine
+   return transformedRect
+end transform_RectFromOrigin
+
+function rect_TransformFromOrigin oRect, oFrameRect, targetFrameRect, pScaleProportionally
+   # Get translation vectors
+   -- using topleft positions scaled graph in topleft of targetFrameRect
+   put item 1 to 2 of oFrameRect into fromPoint -- will be 0,0 for now
+   put item 1 to 2 of targetFrameRect into toPoint
+   
+   loc_SetTranslationVector fromPoint, toPoint, xVector, yVector
+   
+   # Get scaleX, scaleY
+   rect_SetScaleVectors oFrameRect, targetFrameRect, scaleX, scaleY, pScaleProportionally
+   
+   # Scale before translating
+   put rect_ScaleByVectors (oRect, scaleX, scaleY) into transformedRect   
+   
+   # Translate
+   rect_Translate transformedRect, xVector, yVector
+   --
+   return transformedRect
+end rect_TransformFromOrigin
 
 command transform_Card cardObject, targetFrameRect, pMove, pScaleProportionally
    put the displayed_Objects of cardObject into objectIndex
@@ -97,43 +417,12 @@ command transform_MoveObject tObject, targetFrameRect, pScaleProportionally, pDu
    if pMethod is empty then put "inOut" into pMethod
    --
    put the displayed_RectArray of tObject into rectArray 
-   put transform_GetRect (rectArray, tObject, targetFrameRect, pScaleProportionally) into transformedRect
+   put transform_RectFromOrigin (rectArray, tObject, targetFrameRect, pScaleProportionally) into transformedRect
    --
    rect_Normalise transformedRect
    aeChangeRect tObject, transformedRect, pDuration, pMethod
    return transformedRect
 end transform_MoveObject
-
-function transform_GetRect rectArray, tObject, targetFrameRect, pScaleProportionally
-   -- Transformed means "scaled and translated"
-   
-   # No need to Translate
-   -- for now we assume "target" "rect" is a card so has 0,0 topleft
-   put rectArray ["target"]["rect"] into oCardRect
-   put rectArray_FindObjectArray (rectArray, tObject) into objectArray
-   put objectArray ["rect"] into oRect -- original object rect
-   
-   # Get scaleX, scaleY
-   rect_SetScaleVectors oCardRect, targetFrameRect, scaleX, scaleY
-   if pScaleProportionally is true then
-      put min (scaleX, scaleY) into sFactor
-      put sFactor into scaleX
-      put sFactor into scaleY
-   end if
-   
-   # Scale before translating
-   put rect_ScaleByVectors (oRect, scaleX, scaleY) into transformedRect   
-   rect_Normalise transformedRect -- for animationEngine
-   
-   # Translate
-   put item 1 to 2 of oCardRect into fromPoint -- will be 0,0 for now
-   put item 1 to 2 of targetFrameRect into toPoint
-   loc_SetTranslationVector fromPoint, toPoint, xVector, yVector
-   --
-   rect_Translate transformedRect, xVector, yVector
-   --
-   return transformedRect
-end transform_GetRect
 
 
 --> Displayed
@@ -166,7 +455,7 @@ end displayed_ObjectNames
 getprop displayed_RectArray
    put the card_Object of the target into cardObject
    put the uRIP["displayed_RectDataNum"] of cardObject into indexNum
-   if indexNum is empty then return empty
+   if indexNum is empty then put 1 into indexNum -- defaults to 1
    return the rect_Data [indexNum] of cardObject
 end displayed_RectArray
 
@@ -211,20 +500,6 @@ setprop rectData_Title [itemNum] sTitle
    return rectData
 end rectData_Title
 
-setprop rectArray_Animate indexNum
-   put the rect_Data [indexNum] of the target into rectArray
-   put rectArray_ListObjects (rectArray) into objectIndex
-   
-   -- aeLockMoves
-   repeat for each line tObject in objectIndex
-      put the rectArray_Rects of tObject into rectIndex
-      --
-      put line indexNum of rectIndex into sRect
-      aeChangeRect tObject, sRect, 1000, "inOut"
-   end repeat
-   return rectArray
-end rectArray_Animate
-
 
 --> RectArray | List | Names
 -
@@ -264,16 +539,6 @@ function rectArray_ListObjects rectArray
    return objectIndex
 end rectArray_ListObjects
 
--- private function rectArray_ListObjects rectArray, restoreHow
-   put rectArray [restoreHow] into sArray
-   repeat for each key itemNum in sArray
-      put sArray [itemNum]["control"] into sObject
-      put sObject & CR after objectIndex
-   end repeat
-   delete char -1 of objectIndex
-   return objectIndex
-end rectArray_ListObjects
-
 function rectArray_ListViews rectArray
    put rectArray ["views"] into cArray
    put _ListObjects (cArray) into viewIndex
@@ -285,34 +550,6 @@ function rectArray_ListControls rectArray
    put _ListObjects (cArray) into viewIndex
    return viewIndex
 end rectArray_ListControls
-
-private function _ListObjects cArray
-   repeat with itemNum = 1 to item 2 of the extents of cArray
-      put cArray [itemNum] into objectArray
-      put objectArray ["control"] into sObject
-      if sObject is not empty then
-         put sObject & CR after objectIndex
-      end if
-   end repeat
-   delete char -1 of objectIndex
-   return objectIndex
-end _ListObjects
-
-private function _ListViewControlNames cArray
-   repeat with itemNum = 1 to item 2 of the extents of cArray
-      put cArray [itemNum]["name"] into cName
-      if cName is empty then next repeat
-      --
-      if cName is among the lines of cNames then
-         put viewArray [itemNum]["control"] into rObject
-         put word 1 to 3 of rObject into cName
-      end if
-      --
-      put cName & CR after cNames
-   end repeat
-   delete char -1 of cNames
-   return cNames
-end _ListViewControlNames
 
 
 --> RectArray
@@ -327,24 +564,6 @@ getprop rectArray_Rects [rectData]
    put rectData_ListRects (rectData, tObject) into rectIndex
    return rectIndex
 end rectArray_Rects
-
-function rectArray_FindObjectArray rectArray, tObject
-   -- an object should only be listed in one section
-   -- not searching target?
-   
-   put revRuggedId (tObject) into rObject
-   repeat for each item oType in "views,controls"
-      put rectArray [oType] into cArray
-      repeat with itemNum = 1 to item 2 of the extents of cArray
-         put cArray [itemNum] into objectArray
-         put objectArray ["control"] into testObject
-         if testObject = rObject then
-            return objectArray
-         end if
-      end repeat
-   end repeat
-   return empty
-end rectArray_FindObjectArray
 
 function rectData_ListRects rectData, tObject
    repeat with lineNum = 1 to item 2 of the extents of rectData
@@ -370,111 +589,8 @@ getprop rectArray_Names
 end rectArray_Names
 
 
---> RectData
--
-getprop rect_MetaArray [indexOrName]
-   put the rect_Data [indexOrName] of the target into rectArray
-   return rectArray ["meta"]
-end rect_MetaArray
-
-setprop rect_MetaArray [indexOrName] mArray
-   put the rect_Data [indexOrName] of the target into rectArray
-   put mArray into rectArray ["meta"]
-   return rectArray
-end rect_MetaArray
-
-getprop rect_Data [indexOrName]
-   put the rectArray_Data of the target into rectData
-   switch
-      case indexOrName is empty
-         return rectData
-      case indexOrName is a number
-         return rectData [indexOrName]
-      default
-         put rectData_FindTitle (indexOrName, rectData) into itemNum
-         if itemNum = 0 then
-            return empty
-         else
-            return rectData [itemNum]
-         end if
-   end switch
-end rect_Data
-
-function rectData_FindTitle sTitle, rectData
-   repeat with itemNum = 1 to item 2 of the extents of rectData
-      put rectData [itemNum]["meta"]["title"] into tName
-      if tName = sTitle then
-         return itemNum
-      end if
-   end repeat
-   return 0
-end rectData_FindTitle
-
-setprop rect_Data [indexOrName] sArray
-   switch
-      case indexOrName is empty
-         set the rectArray_Data of the target to sArray
-         return rectData
-      case indexOrName is a number
-         put the rectArray_Data of the target into rectData
-         put sArray into rectData [indexOrName]
-         set the rectArray_Data of the target to rectData
-         return rectData
-      default
-         return empty
-   end switch
-end rect_Data
-
-setprop rectData_Add [sTitle] sArray
-   put sTitle into sArray ["meta"]["title"]
-   --  
-   put the rectArray_Data of the target into rectData
-   --
-   put rectData_FindTitle (sTitle, rectData) into itemNum
-   if itemNum = 0 then
-      # Add to the end
-      put item 2 of the extents of rectData + 1 into itemNum
-   end if
-   --
-   put sArray into rectData [itemNum]
-   set the rect_Data of the target to rectData
-   return itemNum
-end rectData_Add
-
-
 --> RectArray
 -
-getprop rect_Array
-   put the long id of the target into tObject
-   --
-   _AddTargetMeta rectArray, tObject
-   _AddStackMeta rectArray
-   
-   # Use topviews to not index elements inside
-   _AddTopViews rectArray
-   put the result into viewArrray
-   
-   switch restoreHow
-      case "target"
-         delete variable rectArray ["stack"]
-         delete variable rectArray ["views"]
-         break
-      case "stack"
-         delete variable rectArray ["views"]
-         break
-      case "views"
-         break
-      case "controls"
-         _AddControls rectArray
-         delete variable rectArray ["views"]
-         break
-      default
-         _AddControls rectArray
-   end switch
-   --
-   return rectArray
-end rect_Array
-
 function rectArray_WithinView rObject, rectArray
    put the long name of rObject into sObject
    --
@@ -659,22 +775,3 @@ private command _RestoreViews rectArray
    _RestoreRects viewArray
    return viewArray
 end _RestoreViews
-
-private command _RestoreRects objectArray
-   repeat with itemNum = 1 to item 2 of the extents of objectArray
-      put objectArray [itemNum]["control"] into sObject
-      if exists (sObject) is false then
-         -- allows deleting of ordered items without having to reindex rectArray
-         next repeat
-      end if
-      --
-      put objectArray [itemNum]["rect"] into sRect
-      if sRect is a rect then -- should not be necessary
-         set the rect of sObject to sRect
-      end if
-   end repeat
-end _RestoreRects
-
-
---> RectArray
--

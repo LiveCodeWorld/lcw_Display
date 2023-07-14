@@ -21,7 +21,88 @@ so that there is no view oriented code in the other libraries.
 You can "view" this library as contaminated :)
 */
 
+local LocalArray
+
+
 --> Working on
+-
+command display_JsonFile jsonFile, pTitle
+   if pTitle is empty then put "JSON File" into pTitle
+   --
+   put url ("file:" & jsonFile) into sJSON
+   put json_ToArray (sJSON) into sArray
+   --
+   _DisplayArrayOrJsonFile sArray, jsonFile, pTitle
+   put the result into dView
+   --
+   return dView
+end display_JsonFile
+
+command display_ArrayFile sFile, pTitle
+   if pTitle is empty then put "Array File" into pTitle
+   --
+   put array_Fetch (sFile) into sArray
+   _DisplayArrayOrJsonFile sArray, sFile, pTitle
+   put the result into dView
+   --
+   return dView
+end display_ArrayFile
+
+private command _DisplayArrayOrJsonFile sArray, sFile, pTitle
+   set the itemdelimiter to slash
+   put item -1 of sFile into shortFile
+   --
+   display_Data sArray, shortFile, pTitle
+   put the result into dView
+   set the displayed_File of dView to sFile
+   --
+   return dView
+end _DisplayArrayOrJsonFile
+
+
+--> Display | Objects
+-
+function display_MenuDisplayView
+   -- works with display_MenuTarget
+   -- use carefully (should integrate with mArray menus)
+   return LocalArray ["display_View"]
+end display_MenuDisplayView
+
+function display_MenuTarget tObject
+   -- a utility function to allow for direct of display view menus
+   put the display_View of tObject into dView
+   put dView into LocalArray ["display_View"]
+   --
+   if exists (dView) then
+      put the displayed_Object of dView into tObject
+      return tObject
+   else
+      return tObject
+   end if
+end display_MenuTarget
+
+function display_GetObject tObject
+   -- a utility function to allow general listing of a script object
+   -- whether directly from the script editor or an index or array dispayView
+   
+   put the display_View of tObject into displayView
+   if exists (displayView) is false then return empty
+   
+   put the stack_Name of tObject into stackName
+   switch
+      case word 1 of stackName = "revNewScriptEditor"
+         -- revNewScriptEditor 1
+         put scriptEditor_Object() into sObject
+         return sObject         
+      default
+         put the displayed_Object of displayView into sObject
+         if exists (sObject) is false then return empty
+         return sObject
+   end switch
+end display_GetObject
+
+
+--> Display | Find
 -
 function stack_FindNames nameStem
    -- could use filter
@@ -88,40 +169,6 @@ private function debug_CallingObject pNum
    put item 1 of line lineNum of it into callingObject
    return callingObject
 end debug_CallingObject
-
-
---> Display | Objects
--
-function display_MenuTarget tObject
-   -- a utility function to allow for direct of display view menus
-   put the display_View of tObject into dView
-   if exists (dView) then
-      put the displayed_Object of dView into tObject
-      return tObject
-   else
-      return tObject
-   end if
-end display_MenuTarget
-
-function display_GetObject tObject
-   -- a utility function to allow general listing of a script object
-   -- whether directly from the script editor or an index or array dispayView
-   
-   put the display_View of tObject into displayView
-   if exists (displayView) is false then return empty
-   
-   put the stack_Name of tObject into stackName
-   switch
-      case word 1 of stackName = "revNewScriptEditor"
-         -- revNewScriptEditor 1
-         put scriptEditor_Object() into sObject
-         return sObject         
-      default
-         put the displayed_Object of displayView into sObject
-         if exists (sObject) is false then return empty
-         return sObject
-   end switch
-end display_GetObject
 
 
 --> Display | Exists
@@ -312,18 +359,6 @@ function display_ListIndexStackNames
    sort indexStackNames by word -1 of each
    return indexStackNames
 end display_ListIndexStackNames
-
-command stack_ShowAndGo viewObject, cloneStackName, pStackLabel, pStackStyle, pLocORRect
-   if pStackStyle is empty then put "toplevel" into pStackStyle
-   set the stack_Style of stack cloneStackName to pStackStyle
-   if pStackLabel is not empty then set the label of stack cloneStackName to pStackLabel
-   --
-   stack_Position cloneStackName, pLocOrRect
-   dispatch "LayoutControl" to viewObject
-   --
-   show stack cloneStackName
-   return pStackLabel
-end stack_ShowAndGo
 
 command stack_Position stackName, pLocOrRect
    switch
@@ -562,7 +597,7 @@ function display_ListViews pSearchStackLabel, pSearchViewTitle
    return displayViews
 end display_ListViews
 
-command display_Spin someLine, pIndexView, pLineColour
+command display_Spin lineOrNum, pIndexView, pLineColour
    set the cursor to busy
    if exists (pIndexView) is false then
       set the cursor to busy
@@ -571,8 +606,13 @@ command display_Spin someLine, pIndexView, pLineColour
    
    # Spin (works with index and array display views)
    lock screen
-   set the selected_Line of pIndexView to someLine
-   put the result into lineNum
+   if lineOrNum is a number then
+      put lineOrNum into lineNum
+      set the hilited_Line of pIndexView to lineNum
+   else
+      set the selected_Line of pIndexView to someLine
+      put the result into lineNum
+   end if
    --
    switch pLineColour
       case "delete"

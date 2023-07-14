@@ -22,13 +22,31 @@ local LocalArray
 --> Working on
 -
 command LayoutCard
-   -- set the displayed_RectDataNum of me to 1
    put the long id of me into cardObject
-   put the rect of me into targetFrameRect
-   put the scale_Proportional of me into sBoolean
-   --
-   transform_Card cardObject, targetFrameRect, false, sBoolean
+   transform_CardScaled cardObject
 end LayoutCard
+
+
+--> Margins
+-
+getprop card_InnerRect [pRect]
+   if pRect is empty then put the rect of me into pRect
+   --
+   put the card_Margin of me into cardMargin
+   rect_SubtractMargins pRect, cardMargin
+   return pRect
+end card_InnerRect
+
+getprop card_Margin
+   put the card_Margin of me into cardMargin
+   if cardMargin is empty then put 24 into cardMargin
+   return cardMargin
+end card_Margin
+
+setprop card_Margin cardMargin
+   set the card_Margin of me to cardMargin
+   LayoutControl
+end card_Margin
 
 getprop scale_Proportional
    return LocalArray ["scale_Proportional"]
@@ -60,25 +78,3 @@ end mouseDown
 on resizeStack
    LayoutCard
 end resizeStack
-
-
---> Margins
--
-getprop card_InnerRect [pRect]
-   if pRect is empty then put the rect of me into pRect
-   --
-   put the card_Margin of me into cardMargin
-   rect_SubtractMargins pRect, cardMargin
-   return pRect
-end card_InnerRect
-
-getprop card_Margin
-   put the card_Margin of me into cardMargin
-   if cardMargin is empty then put 24 into cardMargin
-   return cardMargin
-end card_Margin
-
-setprop card_Margin cardMargin
-   set the card_Margin of me to cardMargin
-   LayoutControl
-end card_Margin

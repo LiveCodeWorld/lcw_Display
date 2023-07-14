@@ -68,6 +68,22 @@ end setCardBehavior_Params
 
 --> Global | Card | Menu
 -
+on menu_LayoutCard cardObject
+   dispatch "LayoutCard" to cardObject
+end menu_LayoutCard
+
+on menu_LayoutTopViews cardObject
+   put the top_Views of cardObject into tViews
+   lock screen
+   repeat for each line tView in tViews
+      dispatch "LayoutControl" to tView
+   end repeat
+   unlock screen
+end menu_LayoutTopViews
+
+on _
+end _
+
 on submenu_RectArray
    return "Global | RectArray | Menu"
 end submenu_RectArray
@@ -76,24 +92,12 @@ on submenu_Frame
    return "Global | Frame | Menu"
 end submenu_Frame
 
-private command _
-end _
-
 on menu_SetCardBehavior cardObject, bName
    send "ChangeCardBehavior cardObject,bName" to me in 2 ticks
 end menu_SetCardBehavior
 
-on menu_EditCardBehavior cardObject
-   put the behavior of cardObject into bObject
-   edit the script of bObject
-end menu_EditCardBehavior
-
-on menu_CreateCardBehavior cardObject
-   card_CreateBehavior
-end menu_CreateCardBehavior
-
-private command __
-end __
+private on _
+end _
 
 on menu_CardMenuTitle cardObject
    put the menu_Title of cardObject into mTitle
@@ -107,21 +111,29 @@ on menu_CardMargin cardObject
    set the card_Margin of cardObject to cMargin
 end menu_CardMargin
 
-private command ___
-end ___
-
-on menu_LayoutCard cardObject
-   dispatch "LayoutCard" to cardObject
-end menu_LayoutCard
+private on __
+end __
 
 on menu_InsertPlaceHolder cardObject
    view_InsertFromPath "Layout|Placeholder", cardObject, "mouse"
    put the result into fasd
 end menu_InsertPlaceHolder
 
--- on submenu_Menu cardObject
--- on insert_Menu cardObject
--- messes up module view card menu (but otherwise powerful)
-put the menu_Title of cardObject into mName
-return mName
-end submenu_Menu
+on menu_InsertLayout cardObject
+   put the view_RectOnCard of cardObject into cRect
+   view_InsertFromPath "Layout|Horizontal|Two", cardObject, cRect
+end menu_InsertLayout
+
+private on ____
+end ____
+
+on menu_EditCardBehavior cardObject
+   put the behavior of cardObject into bObject
+   edit the script of bObject
+end menu_EditCardBehavior
+
+on menu_CreateCardBehavior cardObject
+   card_CreateBehavior
+end menu_CreateCardBehavior
+
+

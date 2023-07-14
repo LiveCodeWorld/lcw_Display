@@ -58,16 +58,19 @@ end display_HtmlText
 --> Display | Html
 -
 command display_Browser someURL, pShowTools, sRect
+   if someURL is empty then put "https://google.com" into someURL
    -- put the stack_BelowRect of stack "Image 1" into sRect
    --
-   display_Clone "View|Browser", "Browser", someURL, "browser_URL", sRect
+   display_View "View|Browser", someURL
+   -- display_Clone "View|Browser", "Browser", someURL, "browser_URL", sRect
    put the result into displayView
+   --
+   display_SetMenu displayView, "Browser", "title_Menu"
    --
    if pShowTools is not false then
       display_ToolStack displayView
    end if
    --
-   display_SetMenu displayView, "Browser", "title_Menu"
-   --
    return displayView
 end display_Browser
+
