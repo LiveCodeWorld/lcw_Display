@@ -22,16 +22,6 @@ constant ArrayViewName = "View|Tree|Widget with Title"
 
 --> Working on
 -
-command display_ArrayIndex indexArray, pIndexKey, pTitle, pStackLabel, pDisplayView
-   -- see lib_ArrayIndex
-   put indexArray_Names (indexArray, pIndexKey) into sLines
-   display_Data sLines, pTitle, pStackLabel, pDisplayView
-   put the result into displayView
-   --
-   set the view_Data of displayView to indexArray
-   return displayView
-end display_ArrayIndex
-
 command ask_CreateMouseDoubleUpHandler mDoubleUp, titleController
    put "M" && mDoubleUp into shortHKey
    put the found_Hkey [shortHKey] of titleController is not empty into handlerExists

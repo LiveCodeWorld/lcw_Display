@@ -23,16 +23,16 @@ getprop menu_Target [tObject]
    switch
       case word 1 of stackName = "revNewScriptEditor"
          put scriptEditor_Object() into sObject
-         return sObject
+         put the card_Object of sObject into cardObject
+         return cardObject
       case exists (the displayed_Object of displayView)
          put the displayed_Object of displayView into sObject
-         return sObject
+         put the card_Object of sObject into cardObject
+         return cardObject
       case exists (displayView)
-         breakpoint
-         return displayView
+         return empty
       default
          put the card_Object of tObject into cardObject
-         get the name of cardObject
          return cardObject
    end switch
 end menu_Target
@@ -62,7 +62,12 @@ getprop setCardBehavior_Param [cardObject]
 end setCardBehavior_Param
 
 getprop setCardBehavior_Params
-   return card_ListBehaviorNames()
+   get card_ListBehaviorNames()
+   if it is empty then
+      return "behavior_ViewTemplateCard"
+   else
+      return it & ",-,behavior_ViewTemplateCard"
+   end if
 end setCardBehavior_Params
 
 

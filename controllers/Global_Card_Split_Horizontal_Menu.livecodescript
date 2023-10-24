@@ -44,18 +44,36 @@ getprop checked_ScaleProportionally [cardObject]
    return sBoolean
 end checked_ScaleProportionally
 
+getprop treeLeft_Param [cardObject]
+   put the left_View of cardObject into leftView
+   if the tree_View of leftView is empty then
+      return "Index"
+   else
+      return "Tree"
+   end if
+end treeLeft_Param
+
+getprop treeLeft_Params
+   return "Tree,Index"
+end treeLeft_Params
+
 
 --> Global | Card | Split | Horizontal | Menu
 -
-on menu_TreeLeft cardObject
+on menu_TreeLeft cardObject, vBit
    put the left_View of cardObject into leftView
    _Exit leftView
-   put view_GetTemplateObject ("View|Tree|Widget with Title") into tObject
+   switch vBit
+      case "Tree"
+         put view_GetTemplateObject ("View|Tree|Widget with Title") into tObject
+         break
+      default
+         put view_GetTemplateObject ("View|Index|Simple") into tObject
+   end switch
    _Exit tObject
    
    set the view_Replacement of leftView to tObject
    put the result into leftView
-   -- put the left_View of cardObject into leftView
    --
    display_TrelloOrganisations leftView
 end menu_TreeLeft
@@ -88,3 +106,4 @@ end menu_ScaleProportionally
 on submenu_Card
    return "Global | Card | Menu"
 end submenu_Card
+

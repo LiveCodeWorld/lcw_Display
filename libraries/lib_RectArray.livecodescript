@@ -12,6 +12,36 @@ version: 0.1
 
 --> Working on
 -
+setprop rectArray_AnimateScaled [pScaleProportionally] indexOrName
+   -- put the card_Object of the target into arrayObject
+   put the long id of the target into arrayObject
+   --
+   put the rect of arrayObject into tFrameRect
+   put the rect_Data of arrayObject into rectData
+   --
+   put _GetRectArray (indexOrName, rectData) into rectArray
+   set the uRIP["displayed_RectDataNum"] of arrayObject to indexOrName
+   --
+   put rectArray ["target"]["rect"] into oCardRect
+   put rectArray_ListObjects (rectArray) into objectIndex
+   --
+   repeat for each line tObject in objectIndex
+      -- bit of a crap way of doing things
+      -- see 
+      if exists (tObject) is false then next repeat
+      --
+      put the rectArray_Rects of tObject into rectIndex
+      put line indexOrName of rectIndex into oRect
+      --
+      put rect_TransformFromOrigin (oRect, oCardRect, tFrameRect, pScaleProportionally) into sRect
+      rect_Normalise sRect -- for animationEngine
+      --
+      aeChangeRect tObject, sRect, 1000, "inOut"
+   end repeat
+   --
+   return true
+end rectArray_AnimateScaled
+
 
 --> Working on | Extents
 -
@@ -92,30 +122,6 @@ end rectArray_FindObjectArray
 
 --> Animated
 -
-setprop rectArray_AnimateScaled [pScaleProportionally] indexOrName
-   -- animate to scaled rect
-   put the card_Object of the target into cardObject
-   put the rect of cardObject into tFrameRect
-   put the rect_Data of cardObject into rectData
-   --
-   put _GetRectArray (indexOrName, rectData) into rectArray
-   put rectArray_ListObjects (rectArray) into objectIndex
-   set the uRIP["displayed_RectDataNum"] of cardObject to indexOrName
-   --
-   put rectArray ["target"]["rect"] into oCardRect
-   repeat for each line tObject in objectIndex
-      put the rectArray_Rects of tObject into rectIndex
-      --
-      put line indexOrName of rectIndex into oRect
-      put rect_TransformFromOrigin (oRect, oCardRect, tFrameRect, pScaleProportionally) into sRect
-      rect_Normalise sRect -- for animationEngine
-      --
-      aeChangeRect tObject, sRect, 1000, "inOut"
-   end repeat
-   --
-   return true
-end rectArray_AnimateScaled
-
 function rectData_FindTitle sTitle, rectData
    repeat with itemNum = 1 to item 2 of the extents of rectData
       put rectData [itemNum]["meta"]["title"] into tName
@@ -129,18 +135,6 @@ end rectData_FindTitle
 
 --> Model | RectArray
 -
--- private command _NormalizeIndexNum @nameOrNum, rectData
-switch
-   case nameOrNum is empty
-      return false
-   case nameOrNum is a number
-      return true
-   default
-      put rectData_FindTitle (nameOrNum, rectData) into nameOrNum
-      return true
-end switch
-end _NormalizeIndexNum
-
 getprop rect_Array [idList]
    put the long id of the target into tObject
    --
@@ -299,12 +293,13 @@ setprop rectArray_Animate indexNum
 end rectArray_Animate
 
 getprop displayed_RectDataNum [pUseTitle]
-   put the card_Object of the target into cardObject
+   -- put the card_Object of the target into arrayObject
+   put the long id of the target into arrayObject
    --
-   put the uRIP["displayed_RectDataNum"] of cardObject into indexNum
+   put the uRIP["displayed_RectDataNum"] of arrayObject into indexNum
    --
    if pUseTitle is true then
-      put the rect_Data of cardObject into rectData
+      put the rect_Data of arrayObject into rectData
       put rectData [indexNum]["meta"]["title"] into sTitle
       if sTitle is not empty then
          return sTitle
@@ -314,9 +309,10 @@ getprop displayed_RectDataNum [pUseTitle]
 end displayed_RectDataNum
 
 setprop displayed_RectDataNum [restoreStack] indexOrName
-   put the card_Object of the target into cardObject
+   -- put the card_Object of the target into arrayObject
+   put the long id of the target into arrayObject
    --
-   put the rect_Data of cardObject into rectData
+   put the rect_Data of arrayObject into rectData
    switch
       case indexOrName is a number
          put indexOrName into indexNum
@@ -329,8 +325,8 @@ setprop displayed_RectDataNum [restoreStack] indexOrName
    end switch
    --
    put rectData [indexNum] into rectArray
-   set the rectArray_RestoreAll [false] of cardObject to rectArray
-   set the uRIP["displayed_RectDataNum"] of cardObject to indexNum
+   set the rectArray_RestoreAll [false] of arrayObject to rectArray
+   set the uRIP["displayed_RectDataNum"] of arrayObject to indexNum
    --
    return rectArray
 end displayed_RectDataNum
@@ -557,7 +553,7 @@ end rectArray_ListControls
 getprop rectArray_Rects [rectData]
    put the long id of the target into tObject
    if rectData is not an array then
-      -- assumes stroed on the card
+      -- assumes stored on the card
       put the card_Object of tObject into cardObject
       put the rect_Data of cardObject into rectData
    end if

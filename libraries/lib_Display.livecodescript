@@ -26,6 +26,60 @@ local LocalArray
 
 --> Working on
 -
+command display_SetMouseAndMenu displayView, menuBit, pLibName
+   put replaceText (menuBit, " |\|", empty) into mDoubleup
+   put "mDoubleUp_" before mDoubleup
+   --
+   display_SetInteractions displayView, menuBit, mDoubleup, pLibName
+   return displayView
+end display_SetMouseAndMenu
+
+
+--> Display | Menu | AskCreate
+-
+command display_SetInteractions displayView, menuBit, pDoubleUp, pLibName
+   put "Global |" && menuBit && "| Menu" into titleMenu
+   put "Global |" && menuBit && "| Line | Menu" into lineMenu
+   --
+   set the title_Menu of displayView to titleMenu
+   set the line_Menu of displayView to lineMenu
+   --
+   put display_GetLibObject (pLibName, 2) into libObject
+   ask_CreateMenuFromObject titleMenu, libObject
+   ask_CreateMenuFromObject lineMenu, libObject
+   --
+   set the mouse_DoubleUp of displayView to pDoubleUp
+   put menu_GetGlobalController (titleMenu) into titleController
+   if pDoubleUp is empty then return displayView
+   
+   if exists (titleController) then
+      set the mouse_Target of displayView to titleController
+      ask_CreateMouseDoubleUpHandler pDoubleUp, titleController
+   end if
+   return displayView
+end display_SetInteractions
+
+command display_SetMenu displayView, gMenuTitle, pMenuProp, pLibName
+   -- put word 1 to -1 of gMenuTitle into gMenuTitle
+   if not (gMenuTitle begins with "Global | ") then 
+      put "Global | " before gMenuTitle
+   end if
+   if not (gMenuTitle ends with " | Menu") then 
+      put  " | Menu" after gMenuTitle
+   end if
+   --
+   if pMenuProp is empty then put "title_Menu" into pMenuProp
+   --
+   set the pMenuProp of displayView to gMenuTitle
+   put display_GetLibObject (pLibName, 2) into libObject
+   ask_CreateMenuFromObject gMenuTitle, libObject
+   --
+   return libObject
+end display_SetMenu
+
+
+--> Display | Json
+-
 command display_JsonFile jsonFile, pTitle
    if pTitle is empty then put "JSON File" into pTitle
    --
@@ -101,59 +155,6 @@ function display_GetObject tObject
    end switch
 end display_GetObject
 
-
---> Display | Find
--
-function stack_FindNames nameStem
-   -- could use filter
-   put revLoadedStacks ("application") into loadedStackNames
-   repeat for each line stackName in loadedStackNames
-      if stackName begins with nameStem then
-         put stackName & CR after foundStackNames
-      end if
-   end repeat
-   delete char -1 of foundStackNames
-   return foundStackNames
-end stack_FindNames
-
-function display_FindStackNameArray pSearchStackLabel, pSearchViewTitle, pPretty
-   -- looks for Dispay Array, and Display Index views
-   put revLoadedStacks ("application") into dStackNames
-   repeat for each line dStackName in dStackNames
-      get word 1 to 2 of dStackName
-      if it is not among the items of "Display Index,Display Array" then next repeat
-      
-      put the long id of group 1 of stack dStackName into displayView
-      --
-      put the title_text of displayView into titleText
-      put the label of stack dStackName into stackLabel
-      
-      -- skip unless the following conditions are met
-      if pSearchStackLabel is empty then
-         put displayView into displayViewArray [dStackName]["displayView"]
-         put stackLabel into displayViewArray [dStackName]["stackLabel"]
-         put titleText into displayViewArray [dStackName]["titleText"]
-      else if stackLabel = pSearchStackLabel then
-         if pSearchViewTitle is empty then
-            put displayView into displayViewArray [dStackName]["displayView"]
-            put stackLabel into displayViewArray [dStackName]["stackLabel"]
-            put titleText into displayViewArray [dStackName]["titleText"]
-         else if titleText = pSearchViewTitle then
-            put displayView into displayViewArray [dStackName]["displayView"]
-            put stackLabel into displayViewArray [dStackName]["stackLabel"]
-            put titleText into displayViewArray [dStackName]["titleText"]
-         end if
-      end if
-   end repeat
-   --
-   if pPretty is true then
-      put _MakeStackNameArrayPretty (displayViewArray) into prettyArray
-      return prettyArray
-   else
-      return displayViewArray
-   end if
-end display_FindStackNameArray
-
 function display_GetLibObject pLibName, pLineNum
    put debug_CallingObject (2) into libObject
    if pLibName is empty then
@@ -169,33 +170,6 @@ private function debug_CallingObject pNum
    put item 1 of line lineNum of it into callingObject
    return callingObject
 end debug_CallingObject
-
-
---> Display | Exists
--
-function stack_FindNameData pSearchStackLabel, pTestProperty
-   put revLoadedStacks ("application") into dStackNames
-   repeat for each line dStackName in dStackNames
-      if pTestProperty is not empty then
-         if the pTestProperty of stack dStackName is not empty then
-            next repeat
-         end if
-      end if
-      
-      put the label of stack dStackName into stackLabel
-      switch
-         case pSearchStackLabel is empty
-         case stackLabel = pSearchStackLabel
-            if word 1 to -1 of stackLabel is empty then put "Space" into stackLabel
-            put displayView into stackNameData [dStackName]["displayView"]
-            put stackLabel into stackNameData [dStackName]["stackLabel"]
-            break
-         default
-            -- next repeat
-      end switch
-   end repeat
-   return stackNameData
-end stack_FindNameData
 
 
 --> Props
@@ -262,49 +236,6 @@ getprop stack_BelowRect [fRect]
    put display_GetNewStackRect (oRect, fRect, displayScreenRect) into newStackRect
    return newStackRect
 end stack_BelowRect
-
-
---> Display | Menu | AskCreate
--
-command display_SetMenu displayView, gMenuTitle, pMenuProp, pLibName
-   -- put word 1 to -1 of gMenuTitle into gMenuTitle
-   if not (gMenuTitle begins with "Global | ") then 
-      put "Global | " before gMenuTitle
-   end if
-   if not (gMenuTitle ends with " | Menu") then 
-      put  " | Menu" after gMenuTitle
-   end if
-   --
-   if pMenuProp is empty then put "title_Menu" into pMenuProp
-   --
-   set the pMenuProp of displayView to gMenuTitle
-   put display_GetLibObject (pLibName, 2) into libObject
-   ask_CreateMenuFromObject gMenuTitle, libObject
-   --
-   return libObject
-end display_SetMenu
-
-command display_SetInteractions displayView, menuBit, pDoubleUp, pLibName
-   put "Global |" && menuBit && "| Menu" into titleMenu
-   put "Global |" && menuBit && "| Line | Menu" into lineMenu
-   --
-   set the title_Menu of displayView to titleMenu
-   set the line_Menu of displayView to lineMenu
-   --
-   put display_GetLibObject (pLibName, 2) into libObject
-   ask_CreateMenuFromObject titleMenu, libObject
-   ask_CreateMenuFromObject lineMenu, libObject
-   --
-   set the mouse_DoubleUp of displayView to pDoubleUp
-   put menu_GetGlobalController (titleMenu) into titleController
-   if pDoubleUp is empty then return displayView
-   
-   if exists (titleController) then
-      set the mouse_Target of displayView to titleController
-      ask_CreateMouseDoubleUpHandler pDoubleUp, titleController
-   end if
-   return displayView
-end display_SetInteractions
 
 
 --> Display | Specialised
@@ -498,57 +429,6 @@ command display_HkeyLines hkeyLines, someTitle
    put the result into indexView
    set the multiple_Hilites of indexView to false
 end display_HkeyLines
-
-
---> Display | Text
--
-command display_Text textOrUrl, pDisplayTitle, pTreeMenuTitle, pLineMenuTitle, pMouseUpCommand, pMouseDoubleUpCommand, pDragCommand
-   switch
-      case textOrUrl begins with "file:///"
-         -- this is how browsers display a file
-         delete char 6 to 7 of textOrUrl
-      case textOrUrl begins with "file:"
-      case textOrUrl begins with "binfile:"
-      case textOrUrl begins with "http:"
-      case textOrUrl begins with "https:"
-         put url textOrUrl into someText
-         break
-      case char 1 of textOrUrl = "/"
-         -- assume it is a file path
-         -- this is for lazy convenience (separate out to "display_File")
-         put url ("file:" & textOrUrl) into someText
-         break
-      case pDisplayTitle is "atom" 
-         put textOrUrl into someText
-         atom_DisplayText someText
-         return the result
-      default
-         put textOrUrl into someText
-   end switch
-   
-   display_Index someText, pDisplayTitle, pTreeMenuTitle, pLineMenuTitle, pMouseUpCommand, pMouseDoubleUpCommand, pDragCommand
-   put the result into indexView
-   set the field_Style of indexView to "text"
-   return indexView
-end display_Text
-
-command display_ListDataViews
-   put display_FindStackNameArray (empty, empty, true) into displayViewArray
-   --
-   display_Data displayViewArray, "Views", "Find Displays"
-   put the result into displayView
-   display_SetInteractions displayView, "Display | View", "mDoubleUp_LocateDisplayView"
-   --
-   return displayView
-end display_ListDataViews
-
-command display_Handler hName, someHandler, stackLabel
-   -- display_Text
-   display_Data someHandler, hName, stackLabel
-   put the result into indexView
-   set the field_Style of indexView to "text"
-   return indexView
-end display_Handler
 
 
 --> Display | Data | Older

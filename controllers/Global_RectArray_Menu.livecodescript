@@ -15,22 +15,28 @@ local LocalArray
 --> Menu | Props
 -
 getprop menu_Target [tObject]
-   put display_MenuTarget (tObject) into tObject
+   put display_MenuTarget (tObject) into mTarget
+   if mTarget is empty then return empty
    --
    get the hkey_CaseConditions ["S rectArray_Restore"] of stack "lib_RectArray"
    put it into LocalArray ["restoreHows"]
    --
-   put the card_Object of tObject into cardObject
-   put the rectArray_Names of cardObject into aNames
+   if word 1 of mTarget = "card" then
+      put mTarget into arrayObject
+   else
+      put the view_Object of mTarget into arrayObject
+   end if 
+   --
+   put the rectArray_Names of arrayObject into aNames
    put aNames into LocalArray ["rectArrayNames"]
    --
-   put the rectArray_ListControlNames of cardObject into vNames
+   put the rectArray_ListControlNames of arrayObject into vNames
    put vNames into LocalArray ["viewNames"]
    --
-   put the displayed_RectDataNum [true] of cardObject into LocalArray ["dRectDataNum"]
-   put the displayed_ObjectNames of cardObject into LocalArray ["objectNames"]
+   put the displayed_RectDataNum [true] of arrayObject into LocalArray ["dRectDataNum"]
+   put the displayed_ObjectNames of arrayObject into LocalArray ["objectNames"]
    --
-   return cardObject
+   return arrayObject
 end menu_Target
 
 private function _ObjectFromName cName, cardObject
@@ -61,7 +67,12 @@ getprop storeGeometry_Param [cardObject]
 end storeGeometry_Param
 
 getprop storeGeometry_Params
-   return LocalArray ["rectArrayNames"] & ",-,add"
+   get LocalArray ["rectArrayNames"]
+   if it is empty then
+      return "add"
+   else
+      return it & ",-,add"
+   end if
 end storeGeometry_Params
 
 getprop restoreGeometry_Param [cardObject]
@@ -87,7 +98,6 @@ end animateAllScaled_Param
 
 getprop animateAllScaled_Params
    return LocalArray ["rectArrayNames"]
-   return "1,2,3"
 end animateAllScaled_Params
 
 
