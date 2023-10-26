@@ -5,7 +5,7 @@ copyright: David Bovill
 license: GPLv3
 name: Global | Card | Menu
 type: controller
-version: 0.1
+version: 0.2
 
 /*Here you can describe this menu.
 Full help text should be provided on the linked wiki.*/
@@ -140,5 +140,3 @@ end menu_EditCardBehavior
 on menu_CreateCardBehavior cardObject
    card_CreateBehavior
 end menu_CreateCardBehavior
-
-

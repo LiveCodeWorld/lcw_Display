@@ -5,17 +5,24 @@ copyright: David Bovill
 license: GPLv3
 name: lib_DisplayHtml
 type: library
-version: 0.1
+version: 0.3
 
-/*Some help*/
+/*
+This library is about displaying HTML and the browser view.
+*/
 
 
 --> Working on
 -
+function display_ListBrowsers pStackLabel
+   put display_List ("View|Browser", pStackLabel) into browserViews
+   return browserViews
+end display_ListBrowsers
+
 
 --> Display | Html
 -
-command display_Browser someURL, pBrowserView, pShowTools, pStackStyle
+command display_Browser someURL, pBrowserView, pStackLabel, pStackStyle
    if someURL is empty then put "https://google.com" into someURL
    put "View|Browser" into viewName
    --
@@ -23,10 +30,12 @@ command display_Browser someURL, pBrowserView, pShowTools, pStackStyle
       case pBrowserView is true
          display_ViewTemplate viewName
          put the result into browserView
+         if pStackLabel is not empty then set the stack_Label of browserView to pStackLabel
          set the browser_Url of browserView to someURL
          break
       case exists (pBrowserView)
          put pBrowserView into browserView
+         if pStackLabel is not empty then set the stack_Label of browserView to pStackLabel
          set the browser_Url of browserView to someURL
          break
       default
@@ -37,10 +46,6 @@ command display_Browser someURL, pBrowserView, pShowTools, pStackStyle
          put the result into browserView
          display_SetMenu browserView, "Browser", "title_Menu"
    end switch
-   if pShowTools is not false then
-      display_ToolStack browserView
-   end if
-   --
    return browserView
 end display_Browser
 

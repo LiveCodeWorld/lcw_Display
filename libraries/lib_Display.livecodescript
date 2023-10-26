@@ -5,7 +5,7 @@ copyright: David Bovill
 license: GPLv3
 name: lib_Display
 type: library
-version: 0.4
+version: 0.5
 
 /*
 Here we gather handlers that display things.
@@ -26,6 +26,34 @@ local LocalArray
 
 --> Working on
 -
+function stack_FindNameData pSearchStackLabel, pTestProperty
+   put revLoadedStacks ("application") into dStackNames
+   repeat for each line dStackName in dStackNames
+      if pTestProperty is not empty then
+         if the pTestProperty of stack dStackName is not empty then
+            next repeat
+         end if
+      end if
+      
+      put the label of stack dStackName into stackLabel
+      switch
+         case pSearchStackLabel is empty
+         case stackLabel = pSearchStackLabel
+            if word 1 to -1 of stackLabel is empty then put "Space" into stackLabel
+            put displayView into stackNameData [dStackName]["displayView"]
+            put stackLabel into stackNameData [dStackName]["stackLabel"]
+            --
+            if pTestProperty is not empty then
+               put pTestProperty into stackNameData [dStackName]["prop"][pTestProperty]
+            end if
+            break
+         default
+            -- next repeat
+      end switch
+   end repeat
+   return stackNameData
+end stack_FindNameData
+
 command display_SetMouseAndMenu displayView, menuBit, pLibName
    put replaceText (menuBit, " |\|", empty) into mDoubleup
    put "mDoubleUp_" before mDoubleup
@@ -33,6 +61,73 @@ command display_SetMouseAndMenu displayView, menuBit, pLibName
    display_SetInteractions displayView, menuBit, mDoubleup, pLibName
    return displayView
 end display_SetMouseAndMenu
+
+
+--> Display | Events
+-
+/*
+These handlers handle events from display views that are created from the code in this library.
+They do not have to be here, as you can change their location by setting the "mouse_Target" property of the display_View.
+*/
+
+command mouse_EditObjectScript treeView, scriptObject
+   if the optionKey is "Down" then breakpoint
+   if exists (scriptObject) then
+      edit the script of scriptObject
+      --
+      display_ScriptIsDifferent scriptObject
+   end if
+end mouse_EditObjectScript
+
+on mDoubleUp_LocateDisplayView treeWidget, displayView, pathItems
+   object_GoTo displayView, true
+   --
+   put the clickloc into sLoc
+   put the globalLoc of sLoc into gLoc
+   put the stack_Name of displayView into stackName
+   --
+   set the topleft of stack stackName to gLoc
+end mDoubleUp_LocateDisplayView
+
+command mDoubleUp_EditOldMenuScript targetObject, globalMenuCardName
+   put "/Users/BabyBlue/Documents/My Revolution Enterprise/Plugins/opn_Plugins/opn_Libraries/libOPN_Menus.rev" into longStackFile
+   edit the script of card globalMenuCardName of stack longStackFile
+end mDoubleUp_EditOldMenuScript
+
+on mDoubleUp_HkeyLine displayView, hKeyLine
+   hkey_Edit hKeyLine
+end mDoubleUp_HkeyLine
+
+on mDouble_EditStack displayView, stackName
+   edit the script of stack stackName
+end mDouble_EditStack
+
+
+--> Display | Handler | Exports
+-
+command display_RecentExports pSinceMin, pIndexView, pDontFilter
+   if pSinceMin is empty then
+      put 60*60 into someMin
+   else
+      put word 1 of pSinceMin into someMin
+   end if
+   --
+   put merge ("In last [[someMin]] minutes") into someTitle
+   --
+   put 60 * someMin into someSec
+   put spotlight_ListRecentlyExportedObjects (someSec) into scriptObjects
+   if pDontFilter is not true then
+      put "Unsaved in" into word 1 of someTitle
+      put script_FilterChangedIndex (scriptObjects) into scriptObjects
+   else
+      put "Modified in" into word 1 of someTitle
+   end if
+   
+   display_Data scriptObjects, "Script Changes", "Script Changes"
+   put the result into displayView
+   display_SetInteractions displayView, "Script | Changes", "mouse_EditObjectScript"
+   return displayView
+end display_RecentExports
 
 
 --> Display | Menu | AskCreate
@@ -154,6 +249,59 @@ function display_GetObject tObject
          return sObject
    end switch
 end display_GetObject
+
+
+--> Display | Find
+-
+function stack_FindNames nameStem
+   -- could use filter
+   put revLoadedStacks ("application") into loadedStackNames
+   repeat for each line stackName in loadedStackNames
+      if stackName begins with nameStem then
+         put stackName & CR after foundStackNames
+      end if
+   end repeat
+   delete char -1 of foundStackNames
+   return foundStackNames
+end stack_FindNames
+
+function display_FindStackNameArray pSearchStackLabel, pSearchViewTitle, pPretty
+   -- looks for Dispay Array, and Display Index views
+   put revLoadedStacks ("application") into dStackNames
+   repeat for each line dStackName in dStackNames
+      get word 1 to 2 of dStackName
+      if it is not among the items of "Display Index,Display Array" then next repeat
+      
+      put the long id of group 1 of stack dStackName into displayView
+      --
+      put the title_text of displayView into titleText
+      put the label of stack dStackName into stackLabel
+      
+      -- skip unless the following conditions are met
+      if pSearchStackLabel is empty then
+         put displayView into displayViewArray [dStackName]["displayView"]
+         put stackLabel into displayViewArray [dStackName]["stackLabel"]
+         put titleText into displayViewArray [dStackName]["titleText"]
+      else if stackLabel = pSearchStackLabel then
+         if pSearchViewTitle is empty then
+            put displayView into displayViewArray [dStackName]["displayView"]
+            put stackLabel into displayViewArray [dStackName]["stackLabel"]
+            put titleText into displayViewArray [dStackName]["titleText"]
+         else if titleText = pSearchViewTitle then
+            put displayView into displayViewArray [dStackName]["displayView"]
+            put stackLabel into displayViewArray [dStackName]["stackLabel"]
+            put titleText into displayViewArray [dStackName]["titleText"]
+         end if
+      end if
+   end repeat
+   --
+   if pPretty is true then
+      put _MakeStackNameArrayPretty (displayViewArray) into prettyArray
+      return prettyArray
+   else
+      return displayViewArray
+   end if
+end display_FindStackNameArray
 
 function display_GetLibObject pLibName, pLineNum
    put debug_CallingObject (2) into libObject
@@ -348,44 +496,6 @@ function display_ConstructFoldState ePaths
 end display_ConstructFoldState
 
 
---> Display | Events
--
-/*
-These handlers handle events from display views that are created from the code in this library.
-They do not have to be here, as you can change their location by setting the "mouse_Target" property of the display_View.
-*/
-
-on mDoubleUp_LocateDisplayView treeWidget, displayView, pathItems
-   object_GoTo displayView, true
-   --
-   put the clickloc into sLoc
-   put the globalLoc of sLoc into gLoc
-   put the stack_Name of displayView into stackName
-   --
-   set the topleft of stack stackName to gLoc
-end mDoubleUp_LocateDisplayView
-
-command mouse_EditObjectScript treeView, scriptObject
-   if the optionKey is "Down" then breakpoint
-   if exists (scriptObject) then
-      edit the script of scriptObject
-   end if
-end mouse_EditObjectScript
-
-command mDoubleUp_EditOldMenuScript targetObject, globalMenuCardName
-   put "/Users/BabyBlue/Documents/My Revolution Enterprise/Plugins/opn_Plugins/opn_Libraries/libOPN_Menus.rev" into longStackFile
-   edit the script of card globalMenuCardName of stack longStackFile
-end mDoubleUp_EditOldMenuScript
-
-on mDoubleUp_HkeyLine displayView, hKeyLine
-   hkey_Edit hKeyLine
-end mDoubleUp_HkeyLine
-
-on mDouble_EditStack displayView, stackName
-   edit the script of stack stackName
-end mDouble_EditStack
-
-
 --> Display | Edited
 -
 command display_EditedStacks
@@ -395,33 +505,6 @@ command display_EditedStacks
    display_SetInteractions displayView, "Edited | Tree", "mDouble_EditStack"
    return displayView
 end display_EditedStacks
-
-
---> Display | Handler | Exports
--
-command display_RecentExports pSinceMin, pIndexView, pDontFilter
-   if pSinceMin is empty then
-      put 60*60 into someMin
-   else
-      put word 1 of pSinceMin into someMin
-   end if
-   --
-   put merge ("In last [[someMin]] minutes") into someTitle
-   --
-   put 60 * someMin into someSec
-   put spotlight_ListRecentlyExportedObjects (someSec) into scriptObjects
-   if pDontFilter is not true then
-      put "Unsaved in" into word 1 of someTitle
-      put script_FilterChangedIndex (scriptObjects) into scriptObjects
-   else
-      put "Modified in" into word 1 of someTitle
-   end if
-   
-   display_Data scriptObjects, "Script Changes", "Script Changes"
-   put the result into displayView
-   display_SetInteractions displayView, "Script | Changes", "mouse_EditObjectScript"
-   return displayView
-end display_RecentExports
 
 command display_HkeyLines hkeyLines, someTitle
    local mTitle, mLineTitle, mUp
@@ -736,3 +819,4 @@ private command _setTitles @widgetDisplayTitle, @displayStackLabel, pDisplayTitl
       put word 1 to -1 of item 2 of pDisplayTitle into displayStackLabel
    end if
 end _setTitles
+
