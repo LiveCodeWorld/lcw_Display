@@ -22,13 +22,14 @@ end display_ListBrowsers
 
 --> Display | Html
 -
-command display_Browser someURL, pBrowserView, pStackLabel, pStackStyle
+command display_Browser someURL, pBrowserView, pStackLabel, pStackStyle, pViewName
    if someURL is empty then put "https://google.com" into someURL
-   put "View|Browser" into viewName
+   if pStackLabel is empty then put "Browser" into pStackLabel
+   if pViewName is empty then put "View|Browser" into pViewName
    --
    switch
       case pBrowserView is true
-         display_ViewTemplate viewName
+         display_ViewTemplate pViewName
          put the result into browserView
          if pStackLabel is not empty then set the stack_Label of browserView to pStackLabel
          set the browser_Url of browserView to someURL
@@ -40,9 +41,8 @@ command display_Browser someURL, pBrowserView, pStackLabel, pStackStyle
          break
       default
          if pStackStyle is empty then put "toplevel" into pStackStyle
-         -- display_Clone "View|Browser", "Browser", someURL, "browser_URL", sRect
          --
-         display_View viewName, someURL, "Browser", pStackRect, "browser_URL", pStackStyle
+         display_View pViewName, someURL, pStackLabel, empty, "browser_URL", pStackStyle
          put the result into browserView
          display_SetMenu browserView, "Browser", "title_Menu"
    end switch
@@ -117,7 +117,7 @@ end display_Handler
 --> Display | Html
 -
 command display_ScaffoldHtml htmlTemplateName, pLocOrRect, pStackStyle, pCloneName
-   put scaffold_GetTemplate (htmlTemplateName) into someHTML
+   put scaffold_Get (htmlTemplateName) into someHTML
    --
    display_Html someHTML, pCloneName, pLocOrRect, pStackStyle
    put the result into displayView

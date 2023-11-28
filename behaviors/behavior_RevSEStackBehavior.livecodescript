@@ -22,6 +22,7 @@ after actionCompile
    -- so this should be sent after you compile a script
    -- for instance when you press the Apply button in the ScriptEditor
    -- put the long id of target into compileButton
+   -- put the params
    
    ## Get the control being edited in the ScriptEditor using built in revIDE handlers
    dispatch "revSEGetCurrentObject" to the target

@@ -310,7 +310,7 @@ private command _CreateStackWithView controlOrViewName, pStackName, pCardMargin,
    put the long id of card 1 of stackObject into cardObject
    set the card_Margin of cardObject to pCardMargin
    
-   if pCardScript is empty then put scaffold_GetTemplate ("Resize Stack Template") into pCardScript -- better to use a behavior !!!
+   if pCardScript is empty then put scaffold_Get ("Resize Stack Template") into pCardScript -- better to use a behavior !!!
    set the script of cardObject to pCardScript
    
    copy templateObject to cardObject
