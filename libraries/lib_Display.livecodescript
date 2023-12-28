@@ -5,7 +5,7 @@ copyright: David Bovill
 license: GPLv3
 name: lib_Display
 type: library
-version: 0.5
+version: 0.6
 
 /*
 Here we gather handlers that display things.
@@ -27,8 +27,6 @@ local LocalArray
 --> Working on
 -
 function text_EditorApplicationPath
-   -- put specialFolderPath ("engine") 
-   -- put "/Applications/LiveCode 10.0.0 (dp 6).app/Contents/MacOS"
    put "/Applications/Visual Studio Code.app" into applicationPath
    return applicationPath
 end text_EditorApplicationPath
@@ -268,6 +266,7 @@ end display_RecentExports
 --> Display | Menu | AskCreate
 -
 command display_SetInteractions displayView, menuBit, pDoubleUp, pLibName
+   -- for index or array views
    put "Global |" && menuBit && "| Menu" into titleMenu
    put "Global |" && menuBit && "| Line | Menu" into lineMenu
    --
@@ -298,7 +297,7 @@ command display_SetMenu displayView, gMenuTitle, pMenuProp, pLibName
       put  " | Menu" after gMenuTitle
    end if
    --
-   if pMenuProp is empty then put "title_Menu" into pMenuProp
+   if pMenuProp is empty then put "menu_Title" into pMenuProp
    --
    set the pMenuProp of displayView to gMenuTitle
    put display_GetLibObject (pLibName, 2) into libObject
@@ -347,8 +346,8 @@ function display_MenuTarget tObject
    put dView into LocalArray ["display_View"]
    --
    if exists (dView) then
-      put the displayed_Object of dView into tObject
-      return tObject
+      put the displayed_Object of dView into linkedView
+      return linkedView
    else
       return tObject
    end if
@@ -587,6 +586,7 @@ command display_Files filePaths, pFolderToStrip, pMouseDoubleUpHandler, pTitleMe
    put debug_CallingObject (2) into pCommandObject
    display_Array pathArray, pTitle
    put the result into displayView
+   
    set the title_Menu of displayView to pTitleMenu
    set the mouse_DoubleUp of displayView to pMouseDoubleUpHandler
    set the mouse_Target of displayView to pCommandObject
@@ -642,6 +642,7 @@ command display_Json jsonReply, pDisplayTitle, pMouseDoubleUpCommand
          local pTreeMenuTitle, pLineMenuTitle, pInspectCommand, pCommandObject
          display_Array jsonArray, pDisplayTitle
          put the result into displayView
+         --
          set the title_Menu of displayView to pTreeMenuTitle
          set the line_Menu of displayView to pLineMenuTitle
          set the mouse_DoubleUp of displayView to pMouseDoubleUpCommand

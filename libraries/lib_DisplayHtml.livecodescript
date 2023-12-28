@@ -22,30 +22,29 @@ end display_ListBrowsers
 
 --> Display | Html
 -
+command display_Html someHTML, pCloneName, pStackStyle
+   if pCloneName is empty then put "Browser" into pCloneName
+   --
+   display_Clone "View|Browser", pCloneName, someHTML, "browser_HtmlText", empty, pStackStyle
+   put the result into displayView
+   dispatch "LayoutControl" to displayView
+   --
+   display_ToolStack displayView
+   return displayView
+end display_Html
+
 command display_Browser someURL, pBrowserView, pStackLabel, pStackStyle, pViewName
    if someURL is empty then put "https://google.com" into someURL
    if pStackLabel is empty then put "Browser" into pStackLabel
    if pViewName is empty then put "View|Browser" into pViewName
-   --
-   switch
-      case pBrowserView is true
-         display_ViewTemplate pViewName
-         put the result into browserView
-         if pStackLabel is not empty then set the stack_Label of browserView to pStackLabel
-         set the browser_Url of browserView to someURL
-         break
-      case exists (pBrowserView)
-         put pBrowserView into browserView
-         if pStackLabel is not empty then set the stack_Label of browserView to pStackLabel
-         set the browser_Url of browserView to someURL
-         break
-      default
-         if pStackStyle is empty then put "toplevel" into pStackStyle
-         --
-         display_View pViewName, someURL, pStackLabel, empty, "browser_URL", pStackStyle
-         put the result into browserView
-         display_SetMenu browserView, "Browser", "title_Menu"
-   end switch
+   
+   # Display
+   display_ModuleInstance pViewName, someURL, pStackLabel, pBrowserView, "browser_URL", pStackStyle
+   put the result into browserView
+   
+   # Set Menus
+   display_SetMenu browserView, "Browser"
+   
    return browserView
 end display_Browser
 
@@ -124,17 +123,6 @@ command display_ScaffoldHtml htmlTemplateName, pLocOrRect, pStackStyle, pCloneNa
    --
    return displayView
 end display_ScaffoldHtml
-
-command display_Html someHTML, pCloneName, pLocOrRect, pStackStyle
-   if pCloneName is empty then put "Browser" into pCloneName
-   --
-   display_Clone "View|Browser", pCloneName, someHTML, "browser_HtmlText", pLocOrRect, pStackStyle
-   put the result into displayView
-   dispatch "LayoutControl" to displayView
-   --
-   display_ToolStack displayView
-   return displayView
-end display_Html
 
 command display_HtmlText someHTML, pTitle, pTreeMenuTitle
    put stack_GetLastRect () into oRect
