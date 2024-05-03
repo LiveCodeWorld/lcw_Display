@@ -25,6 +25,7 @@ setprop rectArray_AnimateScaled [pScaleProportionally] indexOrName
    put rectArray ["target"]["rect"] into oCardRect
    put rectArray_ListObjects (rectArray) into objectIndex
    --
+   put "animationEngine" is among the lines of the stacksinuse into aeOn
    repeat for each line tObject in objectIndex
       -- bit of a crap way of doing things
       -- see 
@@ -36,7 +37,11 @@ setprop rectArray_AnimateScaled [pScaleProportionally] indexOrName
       put rect_TransformFromOrigin (oRect, oCardRect, tFrameRect, pScaleProportionally) into sRect
       rect_Normalise sRect -- for animationEngine
       --
-      aeChangeRect tObject, sRect, 1000, "inOut"
+      if aeOn is true then
+         aeChangeRect tObject, sRect, 1000, "inOut"
+      else
+         set the rect of tObject to sRect
+      end if
    end repeat
    --
    return true
@@ -458,7 +463,7 @@ end displayed_RectArray
 
 --> Props | RectData
 -
-getprop rectData_ItemNum
+getprop rectData_ItemNum [itemNum]
    put the rect_Data of the target into rectData
    return rectData [itemNum]["meta"]["title"]
 end rectData_ItemNum
