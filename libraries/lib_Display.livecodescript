@@ -53,6 +53,35 @@ command display_Lines someIndex, pTitle, pDoubleUp, pStackLabel, pPalette, pTopL
 end display_Lines
 
 
+--> Display | Model
+-
+on mDoubleUp_LcwModel dView, shortModelFile
+   put lcw_FetchArray (shortModelFile) into modelArray
+   display_Data modelArray, shortModelFile, "LCW Model Data"
+end mDoubleUp_LcwModel
+
+command display_LcwModels
+   put lcw_ListModelNames() into shortFiles
+   
+   display_Data shortFiles, "Lcw Models"
+   put the result into displayView
+   -- set the data_MenuBit of displayView to "Lcw | Model"
+   set the mouse_DoubleUp of displayView to "mDoubleUp_LcwModel"
+   return displayView
+end display_LcwModels
+
+on display_LibraryData projectName
+   put library_FetchProjectData() into libraryData
+   
+   display_Data libraryData, "libraryData", "Lcw Library"
+   put the result into displayView
+   --
+   -- set the data_MenuBit of displayView to "Lcw | Model"
+   -- set the mouse_DoubleUp of displayView to "mDoubleUp_LcwModel"
+   return displayView
+end display_LibraryData
+
+
 --> Props
 -
 getprop stack_IsDisplay
@@ -324,7 +353,7 @@ end display_JsonFile
 command display_ArrayFile sFile, pTitle
    if pTitle is empty then put "Array File" into pTitle
    --
-   put array_Fetch (sFile) into sArray
+   put array_Get (sFile) into sArray
    _DisplayArrayOrJsonFile sArray, sFile, pTitle
    put the result into dView
    --

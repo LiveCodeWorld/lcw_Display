@@ -47,7 +47,7 @@ command display_Tools someData, pTitle, pToolPath, pStackLabel, pProjectName, pP
    put the result into displayView
    
    # Set menus and mouse_DoubleUp
-   set the tool_Menus [pProjectName] of displayView to pToolPath
+   set the data_MenuBit [pProjectName] of displayView to pToolPath
    return displayView
 end display_Tools
 
