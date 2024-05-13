@@ -5,7 +5,7 @@ copyright: David Bovill
 license: GPLv3
 name: lib_DisplayArray
 type: library
-version: 0.2
+version: 0.3
 
 /*
 This library is designed to work with the index and array view to display data.
@@ -88,18 +88,12 @@ end display_SetToolMenus
 -
 command display_Data someContent, pTitle, pStackLabel, pDisplayView, pPalette, pTopLeft, pFoldedArray
    lock screen
-   if exists (pDisplayView) is false then
-      if someContent is an array then
-         put display_FindView (pStackLabel, pTitle, "Display Array") into pDisplayView
-      else
-         put display_FindView (pStackLabel, pTitle, "Display Index") into pDisplayView
-      end if
-   end if
-   
-   if someContent is an array then -- display an array
+   if someContent is an array then      
       display_Array someContent, pTitle, pStackLabel, pFoldedArray, pDisplayView, pPalette, pTopLeft
       put the result into pDisplayView
    else
+      _NormalizeView pDisplayView, pStackLabel, pTitle
+      
       if exists (pDisplayView) then
          set the displayed_Index [pTitle] of pDisplayView to someContent
          if pStackLabel is not empty then
@@ -113,24 +107,47 @@ command display_Data someContent, pTitle, pStackLabel, pDisplayView, pPalette, p
    end if
    unlock screen
    --
-   object_GoTo pDisplayView
+   -- object_GoTo pDisplayView
    return pDisplayView
 end display_Data
+
+private command _NormalizeView @pDisplayView, pStackLabel, pTitle
+   if exists (pDisplayView) is false then
+      switch
+         case someContent is empty
+            put display_FindView (pStackLabel, pTitle) into pDisplayView
+            break
+         case someContent is an array
+            put display_FirstOpenView ("Tree", pStackLabel, pTitle) into pDisplayView
+            -- put display_FindView (pStackLabel, pTitle, "Display Array") into pDisplayView
+            break
+         default
+            put display_FirstOpenView ("Index", pStackLabel, pTitle) into pDisplayView
+            -- put display_FindView (pStackLabel, pTitle, "Display Index") into pDisplayView
+      end switch
+   end if
+end _NormalizeView
+
+private command _NormalizeArrayView @pDisplayView, @pFoldedArray, pStackLabel, pTitle
+   if exists (pDisplayView) is true then
+      -- assumes we do not want to change the folded state
+      put empty into pFoldedArray
+   else
+      put display_FindView (pStackLabel, pTitle, "Display Array") into pDisplayView
+      if exists (pDisplayView) is true then
+         -- assumes we do not want to change the folded state
+         put empty into pFoldedArray
+      else
+         -- change the foldState
+      end if
+   end if
+end _NormalizeArrayView
 
 
 --> Display | Array
 -
 command display_Array sArray, pTitle, pStackLabel, pFoldedArray, pDisplayView, pPalette, pTopLeft
-   if exists (pDisplayView) is true then
-      -- this default assumes we do not want to change the folded state if the stack already is open
-      put empty into pFoldedArray
-   else
-      put display_FindView (pStackLabel, pTitle, "Display Array") into pDisplayView
-      if exists (pDisplayView) is true then
-         -- this default assumes we do not want to change the folded state if the stack already is open
-         put empty into pFoldedArray
-      end if
-   end if
+   _NormalizeArrayView pDisplayView, pFoldedArray, pStackLabel, pTitle
    --
    display_InvisibleArray sArray, pTitle, pStackLabel, pFoldedArray, pDisplayView, pPalette, pTopLeft
    put the result into displayView

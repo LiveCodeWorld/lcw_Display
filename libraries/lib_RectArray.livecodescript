@@ -13,7 +13,6 @@ version: 0.1
 --> Working on
 -
 setprop rectArray_AnimateScaled [pScaleProportionally] indexOrName
-   -- put the card_Object of the target into arrayObject
    put the long id of the target into arrayObject
    --
    put the rect of arrayObject into tFrameRect
