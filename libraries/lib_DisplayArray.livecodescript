@@ -103,17 +103,17 @@ command ask_CreateMouseDoubleUpHandler mDoubleUp, pDisplayView
       end if
    end if
    
-   put the menu_Controller [titleMenu] of pDisplayView into mController
-   set the mouse_Target of pDisplayView to mController
    put the mouse_DoubleUp of pDisplayView into mDoubleUp
-   
+   put the mouse_Target of pDisplayView into mTarget
+   --
    put "M" && mDoubleUp into shortHKey
-   put the found_Hkey [shortHKey] of titleController is not empty into handlerExists
+   put the found_Hkey [shortHKey] of mTarget is not empty into handlerExists
    if handlerExists is true then return empty
    
    put display_ConstructDoubleUpHandler (mDoubleUp) into mDoubleUpHandler
    display_Handler mDoubleUp, mDoubleUpHandler, "DoubleUp Handler"
    put the result into indexView
+   --
    return indexView
 end ask_CreateMouseDoubleUpHandler
 
