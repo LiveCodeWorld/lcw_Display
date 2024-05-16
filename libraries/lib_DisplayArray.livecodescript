@@ -20,38 +20,10 @@ We probably want to bring these together into one view with the ability to displ
 constant ArrayViewName = "View|Tree|Widget with Title"
 
 
---> Working on
+--> Old
 -
-command ask_CreateMouseDoubleUpHandler mDoubleUp, titleController
-   put "M" && mDoubleUp into shortHKey
-   put the found_Hkey [shortHKey] of titleController is not empty into handlerExists
-   if handlerExists is true then return empty
-   
-   put "on" && mDoubleUp into mDoubleUpHandler
-   put space & "displayView, someLine" after mDoubleUpHandler
-   put CR & "    breakpoint" after mDoubleUpHandler
-   put CR & "    put the title_Text of displayView into someTitle" after mDoubleUpHandler
-   put CR & "end" && mDoubleUp after mDoubleUpHandler
-   --
-   display_Handler mDoubleUp, mDoubleUpHandler, "DoubleUp Handler"
-   put the result into indexView
-   return indexView
-end ask_CreateMouseDoubleUpHandler
-
-
---> Display | Tools
--
-command display_Tools someData, pTitle, pToolPath, pStackLabel, pProjectName, pPalette, pTopLeft, pFoldedArray
-   # Display data depending on ducktyping of content
-   display_Data someData, pTitle, pStackLabel, "", pPalette, pTopLeft, pFoldedArray
-   put the result into displayView
-   
-   # Set menus and mouse_DoubleUp
-   set the data_MenuBit [pProjectName] of displayView to pToolPath
-   return displayView
-end display_Tools
-
-command display_SetToolMenus menuBit, dView, pProjectName
+command display_SetToolMenus menuBit, dView, pLibName
+   -- old
    get "Global |" && menuBit
    put it && "| Menu" into titleMenu
    put it && "| Line | Menu" into lineMenu
@@ -61,18 +33,12 @@ command display_SetToolMenus menuBit, dView, pProjectName
    put "mDoubleUp_" & menuBit into pDoubleUp
    
    # Create menus if needed
-   if there is a stack pProjectName then
-      put the name of stack pProjectName into libObject
-   else
-      -- breakpoint -- remove reliance on the executioncontexts
-      put debug_CallingObject(2) into libObject
-   end if
-   ask_CreateMenuFromObject titleMenu, libObject
-   ask_CreateMenuFromObject lineMenu, libObject
+   ask_CreateMenuFromObject titleMenu, pLibName
+   ask_CreateMenuFromObject lineMenu, pLibName
    
    # Create mDoubleUp handler if needed
    put menu_GetGlobalController (titleMenu) into mController
-   ask_CreateMouseDoubleUpHandler pDoubleUp, mController
+   ask_CreateMouseDoubleUpHandler pDoubleUp, dView
    set the mouse_Target of dView to mController
    
    # Set menus and mouse
@@ -82,6 +48,114 @@ command display_SetToolMenus menuBit, dView, pProjectName
    --
    return it
 end display_SetToolMenus
+
+command display_SetInteractions displayView, menuBit, pDoubleUp, pLibName
+   -- old use "set the tool_MenuBit of dView"
+   put "Global |" && menuBit && "| Menu" into titleMenu
+   put "Global |" && menuBit && "| Line | Menu" into lineMenu
+   --
+   set the title_Menu of displayView to pLibName
+   set the line_Menu of displayView to pLibName
+   --
+   -- put display_GetLibObject (pLibName, 2) into libObject
+   ask_CreateMenuFromObject titleMenu, pLibName
+   ask_CreateMenuFromObject lineMenu, pLibName
+   --
+   set the mouse_DoubleUp of displayView to pDoubleUp
+   put menu_GetGlobalController (titleMenu) into titleController
+   if pDoubleUp is empty then return displayView
+   
+   if exists (titleController) then
+      set the mouse_Target of displayView to titleController
+      ask_CreateMouseDoubleUpHandler pDoubleUp, displayView
+   end if
+   return displayView
+end display_SetInteractions
+
+command display_SetMenu displayView, gMenuTitle, pMenuProp, pLibName
+   -- put word 1 to -1 of gMenuTitle into gMenuTitle
+   if not (gMenuTitle begins with "Global | ") then 
+      put "Global | " before gMenuTitle
+   end if
+   if not (gMenuTitle ends with " | Menu") then 
+      put  " | Menu" after gMenuTitle
+   end if
+   --
+   if pMenuProp is empty then put "menu_Title" into pMenuProp
+   --
+   set the pMenuProp of displayView to gMenuTitle
+   ask_CreateMenuFromObject gMenuTitle, pLibName
+   --
+   return libObject
+end display_SetMenu
+
+
+--> Working on
+-
+command ask_CreateMouseDoubleUpHandler mDoubleUp, pDisplayView
+   # Create mDoubleUp handler if needed 
+   -- should set up menu to make it easy to find scripts
+   
+   if exists (pDisplayView) is false then
+      put the display_View of the target into pDisplayView
+      if exists (pDisplayView) is false then
+         return "Error, cannot locate the display_View of the target:" && the params
+      end if
+   end if
+   
+   put the menu_Controller [titleMenu] of pDisplayView into mController
+   set the mouse_Target of pDisplayView to mController
+   put the mouse_DoubleUp of pDisplayView into mDoubleUp
+   
+   put "M" && mDoubleUp into shortHKey
+   put the found_Hkey [shortHKey] of titleController is not empty into handlerExists
+   if handlerExists is true then return empty
+   
+   put display_ConstructDoubleUpHandler (mDoubleUp) into mDoubleUpHandler
+   display_Handler mDoubleUp, mDoubleUpHandler, "DoubleUp Handler"
+   put the result into indexView
+   return indexView
+end ask_CreateMouseDoubleUpHandler
+
+function display_ConstructDoubleUpHandler mDoubleUp
+   put "on" && mDoubleUp into mDoubleUpHandler
+   put space & "displayView, someLine" after mDoubleUpHandler
+   put CR & "    breakpoint" after mDoubleUpHandler
+   put CR & "    put the title_Text of displayView into someTitle" after mDoubleUpHandler
+   put CR & "end" && mDoubleUp after mDoubleUpHandler
+   --
+   return mDoubleUpHandler
+end display_ConstructDoubleUpHandler
+
+
+--> Display | Tools
+-
+command display_Tool someData, pTitle, pStackLabel, pDisplayView
+   # Display data depending on ducktyping of content
+   display_Data someData, pTitle, pStackLabel, pDisplayView
+   put the result into dView
+   
+   # Guess menuBit from pStackLabel
+   put pStackLabel into toolPath
+   replace space with " | " in toolPath
+   
+   # Guess libName from pStackLabel
+   put "lib_" & word 1 of pStackLabel into projectName
+   
+   # Set menus and mouse_DoubleUp
+   set the tool_MenuBit [projectName] of dView to toolPath
+   return dView
+end display_Tool
+
+command display_Tools someData, pTitle, pToolPath, pStackLabel, pProjectName, pPalette, pTopLeft, pFoldedArray
+   # Display data depending on ducktyping of content
+   display_Data someData, pTitle, pStackLabel, "", pPalette, pTopLeft, pFoldedArray
+   put the result into displayView
+   
+   # Set menus and mouse_DoubleUp
+   set the tool_MenuBit [pProjectName] of displayView to pToolPath
+   return displayView
+end display_Tools
 
 
 --> Display | Data

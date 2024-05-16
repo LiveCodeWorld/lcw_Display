@@ -24,13 +24,16 @@ You can "view" this library as contaminated :)
 local LocalArray
 
 
---> Working on
+--> Move
 -
 function text_EditorApplicationPath
    put "/Applications/Visual Studio Code.app" into applicationPath
    return applicationPath
 end text_EditorApplicationPath
 
+
+--> Working on
+-
 command display_Lines someIndex, pTitle, pDoubleUp, pStackLabel, pPalette, pTopLeft
    -- does not sort
    local pTitleMenu, pLineMenu, pMouseUp, pDragCommand
@@ -65,7 +68,7 @@ command display_LcwModels
    
    display_Data shortFiles, "Lcw Models"
    put the result into displayView
-   -- set the data_MenuBit of displayView to "Lcw | Model"
+   -- set the tool_MenuBit of displayView to "Lcw | Model"
    set the mouse_DoubleUp of displayView to "mDoubleUp_LcwModel"
    return displayView
 end display_LcwModels
@@ -76,7 +79,7 @@ on display_LibraryData projectName
    display_Data libraryData, "libraryData", "Lcw Library"
    put the result into displayView
    --
-   -- set the data_MenuBit of displayView to "Lcw | Model"
+   -- set the tool_MenuBit of displayView to "Lcw | Model"
    -- set the mouse_DoubleUp of displayView to "mDoubleUp_LcwModel"
    return displayView
 end display_LibraryData
@@ -290,50 +293,6 @@ command display_RecentExports pSinceMin, pIndexView, pDontFilter
    display_SetInteractions displayView, "Script | Changes", "mouse_EditObjectScript"
    return displayView
 end display_RecentExports
-
-
---> Display | Menu | AskCreate
--
-command display_SetInteractions displayView, menuBit, pDoubleUp, pLibName
-   -- for index or array views
-   put "Global |" && menuBit && "| Menu" into titleMenu
-   put "Global |" && menuBit && "| Line | Menu" into lineMenu
-   --
-   set the title_Menu of displayView to titleMenu
-   set the line_Menu of displayView to lineMenu
-   --
-   put display_GetLibObject (pLibName, 2) into libObject
-   ask_CreateMenuFromObject titleMenu, libObject
-   ask_CreateMenuFromObject lineMenu, libObject
-   --
-   set the mouse_DoubleUp of displayView to pDoubleUp
-   put menu_GetGlobalController (titleMenu) into titleController
-   if pDoubleUp is empty then return displayView
-   
-   if exists (titleController) then
-      set the mouse_Target of displayView to titleController
-      ask_CreateMouseDoubleUpHandler pDoubleUp, titleController
-   end if
-   return displayView
-end display_SetInteractions
-
-command display_SetMenu displayView, gMenuTitle, pMenuProp, pLibName
-   -- put word 1 to -1 of gMenuTitle into gMenuTitle
-   if not (gMenuTitle begins with "Global | ") then 
-      put "Global | " before gMenuTitle
-   end if
-   if not (gMenuTitle ends with " | Menu") then 
-      put  " | Menu" after gMenuTitle
-   end if
-   --
-   if pMenuProp is empty then put "menu_Title" into pMenuProp
-   --
-   set the pMenuProp of displayView to gMenuTitle
-   put display_GetLibObject (pLibName, 2) into libObject
-   ask_CreateMenuFromObject gMenuTitle, libObject
-   --
-   return libObject
-end display_SetMenu
 
 
 --> Display | Json
