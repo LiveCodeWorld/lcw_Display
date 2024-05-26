@@ -34,6 +34,10 @@ end text_EditorApplicationPath
 
 --> Working on
 -
+-- on mouse_DoubleUp indexView, cText
+breakpoint
+end mouse_DoubleUp
+
 command display_Lines someIndex, pTitle, pDoubleUp, pStackLabel, pPalette, pTopLeft
    -- does not sort
    local pTitleMenu, pLineMenu, pMouseUp, pDragCommand

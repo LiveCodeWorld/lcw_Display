@@ -107,14 +107,17 @@ command ask_CreateMouseDoubleUpHandler mDoubleUp, pDisplayView
    put the mouse_Target of pDisplayView into mTarget
    --
    put "M" && mDoubleUp into shortHKey
-   put the found_Hkey [shortHKey] of mTarget is not empty into handlerExists
-   if handlerExists is true then return empty
-   
-   put display_ConstructDoubleUpHandler (mDoubleUp) into mDoubleUpHandler
-   display_Handler mDoubleUp, mDoubleUpHandler, "DoubleUp Handler"
-   put the result into indexView
-   --
-   return indexView
+   put the found_Hkey [shortHKey] of mTarget into foundHkey
+   if foundHkey is not empty then
+      lcw_Answer "Found existing double-click handler - [[var]]. Do you want to edit it?", pDisplayView, foundHkey
+      hkey_Edit foundHkey
+      return empty
+   else
+      put display_ConstructDoubleUpHandler (mDoubleUp) into mDoubleUpHandler
+      display_Handler mDoubleUp, mDoubleUpHandler, "DoubleUp Handler"
+      put the result into indexView
+      return indexView
+   end if
 end ask_CreateMouseDoubleUpHandler
 
 function display_ConstructDoubleUpHandler mDoubleUp
@@ -152,6 +155,9 @@ command display_Tools someData, pTitle, pToolPath, pStackLabel, pProjectName, pP
    display_Data someData, pTitle, pStackLabel, "", pPalette, pTopLeft, pFoldedArray
    put the result into displayView
    
+   -- put the stack_Name of displayView into dName
+   -- toplevel stack dName
+   
    # Set menus and mouse_DoubleUp
    set the tool_MenuBit [pProjectName] of displayView to pToolPath
    return displayView
@@ -181,7 +187,7 @@ command display_Data someContent, pTitle, pStackLabel, pDisplayView, pPalette, p
    end if
    unlock screen
    --
-   -- object_GoTo pDisplayView
+   object_GoTo pDisplayView
    return pDisplayView
 end display_Data
 
