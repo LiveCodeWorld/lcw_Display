@@ -20,6 +20,33 @@ We probably want to bring these together into one view with the ability to displ
 constant ArrayViewName = "View|Tree|Widget with Title"
 
 
+--> Working on
+-
+command display_SetInteractions displayView, menuBit, pDoubleUp, pLibName
+   -- old use "set the tool_MenuBit of dView"
+   put "Global |" && menuBit && "| Menu" into titleMenu
+   put "Global |" && menuBit && "| Line | Menu" into lineMenu
+   --
+   set the title_Menu of displayView to titleMenu
+   set the line_Menu of displayView to lineMenu
+   --
+   -- put display_GetLibObject (pLibName, 2) into libObject
+   ask_CreateMenuFromObject titleMenu, pLibName
+   ask_CreateMenuFromObject lineMenu, pLibName
+   --
+   set the mouse_DoubleUp of displayView to pDoubleUp
+   if pDoubleUp is empty then return displayView
+   
+   -- put menu_GetGlobalController (titleMenu) into titleController
+   put menu_GetGlobalController (lineMenu) into lineController
+   if exists (lineController) then
+      set the mouse_Target of displayView to lineController
+      -- ask_CreateMouseDoubleUpHandler pDoubleUp, displayView
+   end if
+   return displayView
+end display_SetInteractions
+
+
 --> Old
 -
 command display_SetToolMenus menuBit, dView, pLibName
@@ -48,29 +75,6 @@ command display_SetToolMenus menuBit, dView, pLibName
    --
    return it
 end display_SetToolMenus
-
-command display_SetInteractions displayView, menuBit, pDoubleUp, pLibName
-   -- old use "set the tool_MenuBit of dView"
-   put "Global |" && menuBit && "| Menu" into titleMenu
-   put "Global |" && menuBit && "| Line | Menu" into lineMenu
-   --
-   set the title_Menu of displayView to pLibName
-   set the line_Menu of displayView to pLibName
-   --
-   -- put display_GetLibObject (pLibName, 2) into libObject
-   ask_CreateMenuFromObject titleMenu, pLibName
-   ask_CreateMenuFromObject lineMenu, pLibName
-   --
-   set the mouse_DoubleUp of displayView to pDoubleUp
-   put menu_GetGlobalController (titleMenu) into titleController
-   if pDoubleUp is empty then return displayView
-   
-   if exists (titleController) then
-      set the mouse_Target of displayView to titleController
-      ask_CreateMouseDoubleUpHandler pDoubleUp, displayView
-   end if
-   return displayView
-end display_SetInteractions
 
 command display_SetMenu displayView, gMenuTitle, pMenuProp, pLibName
    -- put word 1 to -1 of gMenuTitle into gMenuTitle
@@ -116,6 +120,11 @@ command ask_CreateMouseDoubleUpHandler mDoubleUp, pDisplayView
       put display_ConstructDoubleUpHandler (mDoubleUp) into mDoubleUpHandler
       display_Handler mDoubleUp, mDoubleUpHandler, "DoubleUp Handler"
       put the result into indexView
+      --
+      set the displayed_MouseTarget of indexView to mTarget
+      set the displayed_MouseDoubleUp of indexView to mDoubleUp
+      --
+      edit the script of mTarget
       return indexView
    end if
 end ask_CreateMouseDoubleUpHandler
