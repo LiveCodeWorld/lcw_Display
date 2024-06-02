@@ -14,6 +14,24 @@ Full help text can be found on the linked wiki for the view.*/
 --> Working on
 -
 
+--> Objects
+-
+private function _ViewObject
+   put the module_View of me into viewObject
+   if exists (viewObject) then return viewObject
+   
+   if exists (control 1 of me ) then
+      return the long id of control 1 of me -- could check
+   else
+      return empty
+   end if
+end _ViewObject
+
+getprop view_Object
+   return _ViewObject()
+end view_Object
+
+
 --> Events
 -
 on preOpenCard
@@ -115,18 +133,3 @@ command margin_Normalize someMargin, @leftM, @topM, @rightM, @bottomM
    end if
    return leftM,topM,rightM,bottomM
 end margin_Normalize
-
-
---> Objects
--
-private function _ViewObject
-   if exists (control 1 of me) is false then return empty
-   --
-   -- put the view_Object of control 1 of me into someView
-   put the long id of control 1 of me into someView
-   return someView
-end _ViewObject
-
-getprop view_Object
-   return _ViewObject()
-end view_Object

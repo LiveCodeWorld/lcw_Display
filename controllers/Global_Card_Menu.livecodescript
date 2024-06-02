@@ -38,11 +38,19 @@ getprop menu_Target [tObject]
 end menu_Target
 
 on ChangeCardBehavior cardObject, bName
-   -- sent by "menu_SetCardBehavior" so can change teh script of an executing script
-   put the name of stack bName into bObject -- "behavior_CardMargin"
-   set the behavior of cardObject to bObject
-   --
-   edit the script of bObject
+   -- sent by "menu_SetCardBehavior" so can change the script of an executing script
+   if bName is empty then
+      set the behavior of cardObject to empty
+   else
+      if exists (stack bName) is false then breakpoint
+      --
+      put the name of stack bName into bObject -- "behavior_CardMargin"
+      set the behavior of cardObject to bObject
+      --
+      if the shiftKey is "Down" then
+         edit the script of bObject
+      end if
+   end if
 end ChangeCardBehavior
    
 getprop disabled_EditCardBehavior [cardObject]
@@ -73,6 +81,15 @@ end setCardBehavior_Params
 
 --> Global | Card | Menu
 -
+on menu_SetCardBehavior cardObject, bName
+   put the behavior of cardObject into bObject
+   if exists (bObject) is true then
+      send "ChangeCardBehavior cardObject" to me in 2 ticks
+   else
+      send "ChangeCardBehavior cardObject,bName" to me in 2 ticks
+   end if
+end menu_SetCardBehavior
+
 on menu_LayoutCard cardObject
    dispatch "LayoutCard" to cardObject
 end menu_LayoutCard
@@ -96,10 +113,6 @@ end submenu_RectArray
 on submenu_Frame
    return "Global | Frame | Menu"
 end submenu_Frame
-
-on menu_SetCardBehavior cardObject, bName
-   send "ChangeCardBehavior cardObject,bName" to me in 2 ticks
-end menu_SetCardBehavior
 
 private on _
 end _

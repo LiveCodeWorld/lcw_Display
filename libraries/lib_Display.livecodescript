@@ -52,10 +52,6 @@ command display_Lines someIndex, pTitle, pDoubleUp, pStackLabel, pPalette, pTopL
    put the result into indexView
    --
    set the field_Style of indexView to "click"
-   --
-   -- put debug_CallingObject() into callingObject
-   -- set the mouse_Target of indexView to callingObject
-   --
    return indexView
 end display_Lines
 
@@ -427,10 +423,19 @@ command display_Index someIndex, pDisplayTitle, pTreeMenuTitle, pLineMenuTitle, 
    put the view_StackRect [oRect] of displayView into newRect
    stack_Position cloneStackName, newRect
    --
-   show stack cloneStackName
-   go to stack cloneStackName
+   send "stack_Show displayView" to displayView in 2 ticks -- stops flickr
    return displayView
 end display_Index
+
+command stack_Show displayView
+   -- stops flickr
+   if exists (displayView) is false then
+      put the stack_Name of the target into stackName
+   else
+      put the the stack_Name of displayView into stackName
+   end if
+   show stack stackName
+end stack_Show
 
 function display_ListIndexStackNames
    put the openstacks into indexStackNames
