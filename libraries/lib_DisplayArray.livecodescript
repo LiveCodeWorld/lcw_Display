@@ -109,6 +109,9 @@ command ask_CreateMouseDoubleUpHandler mDoubleUp, pDisplayView
    
    put the mouse_DoubleUp of pDisplayView into mDoubleUp
    put the mouse_Target of pDisplayView into mTarget
+   if exists (mTarget) is false then
+      put pDisplayView into mTarget
+   end if
    --
    put "M" && mDoubleUp into shortHKey
    put the found_Hkey [shortHKey] of mTarget into foundHkey
@@ -138,39 +141,6 @@ function display_ConstructDoubleUpHandler mDoubleUp
    --
    return mDoubleUpHandler
 end display_ConstructDoubleUpHandler
-
-
---> Display | Tools
--
-command display_Tool someData, pTitle, pStackLabel, pDisplayView
-   # Display data depending on ducktyping of content
-   display_Data someData, pTitle, pStackLabel, pDisplayView
-   put the result into dView
-   
-   # Guess menuBit from pStackLabel
-   put pStackLabel into toolPath
-   replace space with " | " in toolPath
-   
-   # Guess libName from pStackLabel
-   put "lib_" & word 1 of pStackLabel into projectName
-   
-   # Set menus and mouse_DoubleUp
-   set the tool_MenuBit [projectName] of dView to toolPath
-   return dView
-end display_Tool
-
-command display_Tools someData, pTitle, pToolPath, pStackLabel, pProjectName, pPalette, pTopLeft, pFoldedArray
-   # Display data depending on ducktyping of content
-   display_Data someData, pTitle, pStackLabel, "", pPalette, pTopLeft, pFoldedArray
-   put the result into displayView
-   
-   -- put the stack_Name of displayView into dName
-   -- toplevel stack dName
-   
-   # Set menus and mouse_DoubleUp
-   set the tool_MenuBit [pProjectName] of displayView to pToolPath
-   return displayView
-end display_Tools
 
 
 --> Display | Data
@@ -282,9 +252,54 @@ end display_FindIndexView
 
 --> Private
 -
-private command _CreateInvisibleData someArray, pDisplayTitle, pStackLabel, pFoldedArray, pLocOrRect, pPalette
+command display_CloneInvisible pTitle, pStackLabel
+   # Clone invisible
+   stack_CloneInvisible "View|Tree|Widget with Title", "Display Array"
+   put the result into stackName
+   put display_ViewFromStackName (stackName) into dView
+   
+   # Title and stack label
+   display_SetTitleAndLabel dView, pTitle, pStackLabel
+   
+   # Colour, styyle and position
+   display_ColourTitle dView
+   --
+   return dView
+end display_CloneInvisible
+
+function display_ViewFromStackName cloneStackName
+   put the long id of control 1 of cd 1 of stack cloneStackName into displayView
+   return displayView
+end display_ViewFromStackName
+
+command display_SetTitleAndLabel dView, pTitle, pStackLabel
+   # Title
+   if pTitle is empty then put "Array" into pTitle
+   set the title_Text of dView to pTitle
+   
+   # Label
+   if pStackLabel is not empty then
+      put the stack_Name of dView into cloneStackName
+      set the label of stack cloneStackName to pStackLabel
+   end if
+end display_SetTitleAndLabel
+
+command display_ColourTitle dView
+   set the card_Margin of dView to 0
+   set the title_Colour of dView to "random"
+   put the result into titleColour
+   --
+   put colour_GetDarkOrLight (titleColour) into titleTextColour
+   set the title_TextColour of dView to titleTextColour
+   return titleColour
+end display_ColourTitle
+
+
+--> Old | Create Invisible
+-
+private command _CreateInvisibleData someArray, pTitle, pStackLabel, pFoldedArray, pLocOrRect, pPalette
    put ArrayViewName into viewName
-   if pDisplayTitle is empty then put "Array" into pDisplayTitle
+   if pTitle is empty then put "Array" into pTitle
    
    -- clone invisible
    stack_CloneInvisible viewName, "Display Array"
@@ -310,7 +325,7 @@ private command _CreateInvisibleData someArray, pDisplayTitle, pStackLabel, pFol
       set the tree_SortType of displayView to "numeric"
    end if
    --
-   set the title_Text of displayView to pDisplayTitle
+   set the title_Text of displayView to pTitle
    if pStackLabel is not empty then
       set the label of stack cloneStackName to pStackLabel
    end if

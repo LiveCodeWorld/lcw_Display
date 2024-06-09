@@ -34,9 +34,25 @@ end text_EditorApplicationPath
 
 --> Working on
 -
--- on mouse_DoubleUp indexView, cText
-breakpoint
-end mouse_DoubleUp
+function display_View
+   -- a default
+   -- works with display_MenuTarget
+   -- use carefully (should integrate with mArray menus)
+   return LocalArray ["display_View"]
+end display_View
+
+function display_MenuTarget tObject
+   -- a utility function to allow for direct of display view menus
+   put the display_View of tObject into dView
+   put dView into LocalArray ["display_View"]
+   --
+   if exists (dView) then
+      put the displayed_Object of dView into linkedView
+      return linkedView
+   else
+      return tObject
+   end if
+end display_MenuTarget
 
 command display_Lines someIndex, pTitle, pDoubleUp, pStackLabel, pPalette, pTopLeft
    -- does not sort
@@ -322,25 +338,6 @@ end display_ArrayFile
 
 --> Display | Objects
 -
-function display_MenuDisplayView
-   -- works with display_MenuTarget
-   -- use carefully (should integrate with mArray menus)
-   return LocalArray ["display_View"]
-end display_MenuDisplayView
-
-function display_MenuTarget tObject
-   -- a utility function to allow for direct of display view menus
-   put the display_View of tObject into dView
-   put dView into LocalArray ["display_View"]
-   --
-   if exists (dView) then
-      put the displayed_Object of dView into linkedView
-      return linkedView
-   else
-      return tObject
-   end if
-end display_MenuTarget
-
 function display_GetObject tObject
    -- a utility function to allow general listing of a script object
    -- whether directly from the script editor or an index or array dispayView
