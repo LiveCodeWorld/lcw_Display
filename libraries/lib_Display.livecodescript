@@ -164,49 +164,6 @@ getprop stack_BelowRect [fRect]
    return newStackRect
 end stack_BelowRect
 
-
---> Working on
--
-function stack_FindNameData pSearchStackLabel, pTestProperty
-   put revLoadedStacks ("application") into dStackNames
-   repeat for each line dStackName in dStackNames
-      if pTestProperty is not empty then
-         if the pTestProperty of stack dStackName is not empty then
-            next repeat
-         end if
-      end if
-      
-      put the label of stack dStackName into stackLabel
-      switch
-         case pSearchStackLabel is empty
-         case stackLabel = pSearchStackLabel
-            if word 1 to -1 of stackLabel is empty then put "Space" into stackLabel
-            put displayView into stackNameData [dStackName]["displayView"]
-            put stackLabel into stackNameData [dStackName]["stackLabel"]
-            --
-            if pTestProperty is not empty then
-               put pTestProperty into stackNameData [dStackName]["prop"][pTestProperty]
-            end if
-            break
-         default
-            -- next repeat
-      end switch
-   end repeat
-   return stackNameData
-end stack_FindNameData
-
-function stack_FindNames nameStem
-   -- could use filter
-   put revLoadedStacks ("application") into loadedStackNames
-   repeat for each line stackName in loadedStackNames
-      if stackName begins with nameStem then
-         put stackName & CR after foundStackNames
-      end if
-   end repeat
-   delete char -1 of foundStackNames
-   return foundStackNames
-end stack_FindNames
-
 function stack_GetLastRect
    put line -1 of display_ListIndexStackNames() into lastIndexStackName
    if lastIndexStackName is empty then
@@ -357,47 +314,6 @@ function display_GetObject tObject
          return sObject
    end switch
 end display_GetObject
-
-
---> Display | Find
--
-function display_FindStackNameArray pSearchStackLabel, pSearchViewTitle, pPretty
-   -- looks for Dispay Array, and Display Index views
-   put revLoadedStacks ("application") into dStackNames
-   repeat for each line dStackName in dStackNames
-      get word 1 to 2 of dStackName
-      if it is not among the items of "Display Index,Display Array" then next repeat
-      
-      put the long id of group 1 of stack dStackName into displayView
-      --
-      put the title_text of displayView into titleText
-      put the label of stack dStackName into stackLabel
-      
-      -- skip unless the following conditions are met
-      if pSearchStackLabel is empty then
-         put displayView into displayViewArray [dStackName]["displayView"]
-         put stackLabel into displayViewArray [dStackName]["stackLabel"]
-         put titleText into displayViewArray [dStackName]["titleText"]
-      else if stackLabel = pSearchStackLabel then
-         if pSearchViewTitle is empty then
-            put displayView into displayViewArray [dStackName]["displayView"]
-            put stackLabel into displayViewArray [dStackName]["stackLabel"]
-            put titleText into displayViewArray [dStackName]["titleText"]
-         else if titleText = pSearchViewTitle then
-            put displayView into displayViewArray [dStackName]["displayView"]
-            put stackLabel into displayViewArray [dStackName]["stackLabel"]
-            put titleText into displayViewArray [dStackName]["titleText"]
-         end if
-      end if
-   end repeat
-   --
-   if pPretty is true then
-      put _MakeStackNameArrayPretty (displayViewArray) into prettyArray
-      return prettyArray
-   else
-      return displayViewArray
-   end if
-end display_FindStackNameArray
 
 function display_GetLibObject pLibName, pLineNum
    put debug_CallingObject (2) into libObject

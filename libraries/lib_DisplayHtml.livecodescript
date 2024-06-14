@@ -35,8 +35,10 @@ end display_Html
 
 command display_Browser someURL, pBrowserView, pStackLabel, pStackStyle, pViewName
    if someURL is empty then put "https://google.com" into someURL
-   if pStackLabel is empty then put "Browser" into pStackLabel
    if pViewName is empty then put "View|Browser" into pViewName
+   if pStackLabel is empty then
+      put someURL into pStackLabel
+   end if
    
    # Display
    display_ModuleInstance pViewName, someURL, pStackLabel, pBrowserView, "browser_URL", pStackStyle

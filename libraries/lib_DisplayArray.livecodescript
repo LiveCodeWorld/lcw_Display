@@ -233,23 +233,6 @@ command display_InvisibleArray sArray, pTitle, pStackLabel, pFoldedArray, pDispl
 end display_InvisibleArray
 
 
---> Display | FindView
--
-function display_ViewExists displayStackLabel, pDisplayViewTitle
-   put display_FindView (displayStackLabel, pDisplayViewTitle) into displayView
-   put exists (displayView) into displayViewExists
-   return displayViewExists
-end display_ViewExists
-
-function display_FindArrayView displayStackLabel, pDisplayViewTitle
-   return display_FindView (displayStackLabel, pDisplayViewTitle, "Display Array")
-end display_FindArrayView
-
-function display_FindIndexView displayStackLabel, pDisplayViewTitle
-   return display_FindView (displayStackLabel, pDisplayViewTitle, "Display Index")
-end display_FindIndexView
-
-
 --> Private
 -
 command display_CloneInvisible pTitle, pStackLabel

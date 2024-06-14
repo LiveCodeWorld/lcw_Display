@@ -62,6 +62,23 @@ getprop disabled_EditCardBehavior [cardObject]
    end if
 end disabled_EditCardBehavior
 
+
+--> Global | Card | Menu
+-
+on menu_EditCardBehavior cardObject
+   put the behavior of cardObject into bObject
+   edit the script of bObject
+end menu_EditCardBehavior
+
+on menu_SetCardBehavior cardObject, bName
+   put the behavior of cardObject into bObject
+   if exists (bObject) is true then
+      send "ChangeCardBehavior cardObject" to me in 2 ticks
+   else
+      send "ChangeCardBehavior cardObject,bName" to me in 2 ticks
+   end if
+end menu_SetCardBehavior
+
 getprop setCardBehavior_Param [cardObject]
    put the behavior of cardObject into bObject
    if exists (bObject) is false then return empty
@@ -78,32 +95,11 @@ getprop setCardBehavior_Params
    end if
 end setCardBehavior_Params
 
+on menu_CreateCardBehavior cardObject
+   card_CreateBehavior
+end menu_CreateCardBehavior
 
---> Global | Card | Menu
--
-on menu_SetCardBehavior cardObject, bName
-   put the behavior of cardObject into bObject
-   if exists (bObject) is true then
-      send "ChangeCardBehavior cardObject" to me in 2 ticks
-   else
-      send "ChangeCardBehavior cardObject,bName" to me in 2 ticks
-   end if
-end menu_SetCardBehavior
-
-on menu_LayoutCard cardObject
-   dispatch "LayoutCard" to cardObject
-end menu_LayoutCard
-
-on menu_LayoutTopViews cardObject
-   put the top_Views of cardObject into tViews
-   lock screen
-   repeat for each line tView in tViews
-      dispatch "LayoutControl" to tView
-   end repeat
-   unlock screen
-end menu_LayoutTopViews
-
-on _
+private on _
 end _
 
 on submenu_RectArray
@@ -114,14 +110,8 @@ on submenu_Frame
    return "Global | Frame | Menu"
 end submenu_Frame
 
-private on _
-end _
-
-on menu_CardMenuTitle cardObject
-   put the menu_Title of cardObject into mTitle
-   put lcw_Ask ("Set the menu_Title of this card", mTitle, "Card") into mTitle
-   set the menu_Title of cardObject to mTitle
-end menu_CardMenuTitle
+private on __
+end __
 
 on menu_CardMargin cardObject
    put the card_Margin of cardObject into cMargin
@@ -129,8 +119,12 @@ on menu_CardMargin cardObject
    set the card_Margin of cardObject to cMargin
 end menu_CardMargin
 
-private on __
-end __
+on menu_CardInspector cardObject
+   display_ObjectProperties cardObject
+end menu_CardInspector
+
+private on ___
+end ___
 
 on menu_InsertPlaceHolder cardObject
    view_InsertFromPath "Layout|Placeholder", cardObject, "mouse"
@@ -145,11 +139,21 @@ end menu_InsertLayout
 private on ____
 end ____
 
-on menu_EditCardBehavior cardObject
-   put the behavior of cardObject into bObject
-   edit the script of bObject
-end menu_EditCardBehavior
+on menu_LayoutCard cardObject
+   dispatch "LayoutCard" to cardObject
+end menu_LayoutCard
 
-on menu_CreateCardBehavior cardObject
-   card_CreateBehavior
-end menu_CreateCardBehavior
+on menu_LayoutTopViews cardObject
+   put the top_Views of cardObject into tViews
+   lock screen
+   repeat for each line tView in tViews
+      dispatch "LayoutControl" to tView
+   end repeat
+   unlock screen
+end menu_LayoutTopViews
+
+-- on menu_CardMenuTitle cardObject
+   put the menu_Title of cardObject into mTitle
+   put lcw_Ask ("Set the menu_Title of this card", mTitle, "Card") into mTitle
+   set the menu_Title of cardObject to mTitle
+end menu_CardMenuTitle
