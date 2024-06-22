@@ -34,6 +34,12 @@ end text_EditorApplicationPath
 
 --> Working on
 -
+getprop display_View
+   -- a lazy default
+   put the displayed_Object of the target into dObject
+   return dObject
+end display_View
+
 function display_View
    -- a default
    -- works with display_MenuTarget
