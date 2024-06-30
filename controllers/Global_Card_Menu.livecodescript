@@ -91,7 +91,7 @@ getprop setCardBehavior_Params
    if it is empty then
       return "behavior_ViewTemplateCard"
    else
-      return it & ",-,behavior_ViewTemplateCard"
+      return it & ",-,behavior_ViewTemplateCard,behavior_WikiBrowserCard"
    end if
 end setCardBehavior_Params
 

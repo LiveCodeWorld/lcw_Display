@@ -49,6 +49,7 @@ end display_View
 
 function display_MenuTarget tObject
    -- a utility function to allow for direct of display view menus
+   if exists (tObject) is false then return empty
    put the display_View of tObject into dView
    put dView into LocalArray ["display_View"]
    --
