@@ -34,6 +34,21 @@ end text_EditorApplicationPath
 
 --> Working on
 -
+command display_Index someIndex, pDisplayTitle, pTreeMenuTitle, pLineMenuTitle, pMouseUpCommand, pMouseDoubleUpCommand, pDragCommand, pPalette, pTopLeft
+   -- phase out and use "display_Lines" instead
+   put empty into oRect
+   --
+   display_InvisibleIndex someIndex, pDisplayTitle, pTreeMenuTitle, pLineMenuTitle, pMouseUpCommand, pMouseDoubleUpCommand, pDragCommand, pPalette
+   put the result into displayView 
+   put token -1 of displayView into cloneStackName
+   --
+   put the view_StackRect [oRect] of displayView into newRect
+   stack_Position cloneStackName, newRect
+   --
+   send "stack_Show displayView" to displayView in 2 ticks -- stops flickr
+   return displayView
+end display_Index
+
 getprop display_View
    -- a lazy default
    put the displayed_Object of the target into dObject
@@ -332,21 +347,6 @@ end display_GetLibObject
 
 --> Display | Specialised
 -
-command display_Index someIndex, pDisplayTitle, pTreeMenuTitle, pLineMenuTitle, pMouseUpCommand, pMouseDoubleUpCommand, pDragCommand, pPalette, pTopLeft
-   -- phase out and use "display_Lines" instead
-   put empty into oRect
-   --
-   display_InvisibleIndex someIndex, pDisplayTitle, pTreeMenuTitle, pLineMenuTitle, pMouseUpCommand, pMouseDoubleUpCommand, pDragCommand, pPalette
-   put the result into displayView 
-   put token -1 of displayView into cloneStackName
-   --
-   put the view_StackRect [oRect] of displayView into newRect
-   stack_Position cloneStackName, newRect
-   --
-   send "stack_Show displayView" to displayView in 2 ticks -- stops flickr
-   return displayView
-end display_Index
-
 command stack_Show displayView
    -- stops flickr
    if exists (displayView) is false then
