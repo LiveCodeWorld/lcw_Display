@@ -71,11 +71,16 @@ on menu_EditCardBehavior cardObject
 end menu_EditCardBehavior
 
 on menu_SetCardBehavior cardObject, bName
+   put the name of cardObject into namedCardObject
+   --
    put the behavior of cardObject into bObject
    if exists (bObject) is true then
       send "ChangeCardBehavior cardObject" to me in 2 ticks
+      lcw_Notify "Removed card behavior for [[var]].", "Card Behavior", namedCardObject
    else
       send "ChangeCardBehavior cardObject,bName" to me in 2 ticks
+      --
+      lcw_Notify "Set card behavior to [[var]].", namedCardObject, bName
    end if
 end menu_SetCardBehavior
 
@@ -91,7 +96,7 @@ getprop setCardBehavior_Params
    if it is empty then
       return "behavior_ViewTemplateCard"
    else
-      return it & ",-,behavior_ViewTemplateCard,behavior_WikiBrowserCard"
+      return it & ",-,behavior_ViewTemplateCard,behavior_WikiBrowserCard,behavior_CardModule"
    end if
 end setCardBehavior_Params
 
