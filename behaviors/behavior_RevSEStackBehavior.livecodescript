@@ -34,7 +34,8 @@ after actionCompile
    ## Update Script Changes view if showing
    put display_FindView ("Script Changes") into dView
    if exists (dView) then
-      put the name of scriptObject into sName
+      -- put the name of scriptObject into sName
+      put revRuggedID (scriptObject) into sName
       set the deleted_Line of dView to sName
    end if
 end actionCompile

@@ -52,23 +52,43 @@ on ChangeCardBehavior cardObject, bName
       end if
    end if
 end ChangeCardBehavior
-   
-getprop disabled_EditCardBehavior [cardObject]
+
+private function _bNameMenu
+   get card_ListBehaviorNames()
+   if it is empty then
+      return "behavior_ViewTemplateCard"
+   else
+      return it & ",-,behavior_ViewTemplateCard,behavior_WikiBrowserCard,behavior_CardModule"
+   end if
+end _bNameMenu
+
+
+--> Global | Card | Menu
+-
+on menu_ThisCardBehavior cardObject
+   put the behavior of cardObject into bObject
+   edit the script of bObject
+end menu_ThisCardBehavior
+
+getprop disabled_ThisCardBehavior [cardObject]
    put the behavior of cardObject into bObject
    if exists (bObject) then
       return false
    else
       return true
    end if
-end disabled_EditCardBehavior
+end disabled_ThisCardBehavior
 
-
---> Global | Card | Menu
--
-on menu_EditCardBehavior cardObject
-   put the behavior of cardObject into bObject
+on menu_EditCardBehavior  cardObject, bName
+   put behavior_GetObject(bName) into bObject
+   put the name of stack bName into bObject -- "behavior_CardMargin"
+   --
    edit the script of bObject
 end menu_EditCardBehavior
+
+getprop editCardBehavior_Params
+   return _bNameMenu()
+end editCardBehavior_Params
 
 on menu_SetCardBehavior cardObject, bName
    put the name of cardObject into namedCardObject
@@ -92,12 +112,7 @@ getprop setCardBehavior_Param [cardObject]
 end setCardBehavior_Param
 
 getprop setCardBehavior_Params
-   get card_ListBehaviorNames()
-   if it is empty then
-      return "behavior_ViewTemplateCard"
-   else
-      return it & ",-,behavior_ViewTemplateCard,behavior_WikiBrowserCard,behavior_CardModule"
-   end if
+   return _bNameMenu()
 end setCardBehavior_Params
 
 on menu_CreateCardBehavior cardObject
@@ -158,7 +173,7 @@ on menu_LayoutTopViews cardObject
 end menu_LayoutTopViews
 
 -- on menu_CardMenuTitle cardObject
-   put the menu_Title of cardObject into mTitle
-   put lcw_Ask ("Set the menu_Title of this card", mTitle, "Card") into mTitle
-   set the menu_Title of cardObject to mTitle
+put the menu_Title of cardObject into mTitle
+put lcw_Ask ("Set the menu_Title of this card", mTitle, "Card") into mTitle
+set the menu_Title of cardObject to mTitle
 end menu_CardMenuTitle

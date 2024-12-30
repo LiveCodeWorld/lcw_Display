@@ -166,7 +166,7 @@ command display_Data someContent, pTitle, pStackLabel, pDisplayView, pPalette, p
    end if
    unlock screen
    --
-   object_GoTo pDisplayView
+   object_GoTo pDisplayView, true
    return pDisplayView
 end display_Data
 
