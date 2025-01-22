@@ -41,12 +41,21 @@ command display_Browser someURL, pBrowserView, pStackLabel, pStackStyle, pViewNa
    end if
    
    # Display
-   display_ModuleInstance pViewName, someURL, pStackLabel, pBrowserView, "browser_URL", pStackStyle
-   put the result into browserView
-   
-   # Set Menus
-   display_SetMenu browserView, "Browser"
-   
+   if the shiftKey is "Down" then
+      display_Template pViewName
+      put the result into browserView
+      --
+      set the url of browserView to someURL
+      --
+      breakpoint
+      set the browser_Url of browserView to someURL
+   else
+      display_ModuleInstance pViewName, someURL, pStackLabel, pBrowserView, "browser_URL", pStackStyle, 20
+      put the result into browserView
+      
+      # Set Menus
+      display_SetMenu browserView, "Browser"
+   end if
    return browserView
 end display_Browser
 

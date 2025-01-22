@@ -7,146 +7,161 @@ name: lib_DisplayFind
 type: library
 version: 0.1
 
-/*Some help*/
+/*
+A library of handlers to find, list and hide and show display-views.
+*/
+
+--> Variables
+-
+local LocalArray
 
 
 --> Working on
 -
+function display_GetHidden
+   put display_GetHiddenArray() into stackNameArray
+   put keys (stackNameArray) into sNames
+   sort sNames
+   return sNames
+end display_GetHidden
 
---> Stack | List
--
-function stack_ListOpen
-   put the openstacks into stackNames
-   repeat for each line stackName in stackNames
-      switch
-         case stackName = "Message Box"
-         case char 1 to 3 of stackName = "rev"
-         case char 1 to 4 of stackName = "com."
-         case the scriptonly of stack stackName is true
-            next repeat
-         default
-            put stackName & CR after appStackNames
-      end switch
+command display_SetHidden pBoolean, pStackNames
+   put pBoolean is false into isVisible
+   if pStackNames is empty then
+      put display_ListStackNames() into pStackNames
+   end if
+   
+   repeat for each line stackName in pStackNames
+      set the visible of stack stackName to isVisible
+      display_AddHidden stackName, (isVisible is false)
    end repeat
-   delete char -1 of appStackNames
-   return appStackNames
-end stack_ListOpen
+end display_SetHidden
 
-function stack_ListLabeled sLabel
-   put revLoadedStacks ("application") into dStackNames
-   repeat for each line dStackName in dStackNames
-      if the label of stack dStackName = sLabel then
-         put dStackName & CR after foundStackNames
-      end if
-   end repeat
-   delete char -1 of foundStackNames
-   return foundStackNames
-end stack_ListLabeled
+command display_AddHidden stackName, pBoolean
+   if pBoolean is false then
+      delete variable LocalArray ["Hidden"][stackName]
+   else
+      put the loc of stack stackName into LocalArray ["Hidden"][stackName]["loc"]
+      put the rect of stack stackName into LocalArray ["Hidden"][stackName]["rect"]
+   end if
+end display_AddHidden
 
-function stack_FindNameData pSearchStackLabel, pTestProperty
-   put revLoadedStacks ("application") into dStackNames
-   repeat for each line dStackName in dStackNames
-      if pTestProperty is not empty then
-         if the pTestProperty of stack dStackName is not empty then
-            next repeat
-         end if
-      end if
-      
-      put the label of stack dStackName into stackLabel
-      switch
-         case pSearchStackLabel is empty
-         case stackLabel = pSearchStackLabel
-            if word 1 to -1 of stackLabel is empty then put "Space" into stackLabel
-            put displayView into stackNameData [dStackName]["displayView"]
-            put stackLabel into stackNameData [dStackName]["stackLabel"]
-            --
-            if pTestProperty is not empty then
-               put pTestProperty into stackNameData [dStackName]["prop"][pTestProperty]
-            end if
-            break
-         default
-            -- next repeat
-      end switch
-   end repeat
-   return stackNameData
-end stack_FindNameData
+function display_GetHiddenArray
+   put LocalArray ["Hidden"] into stackNameArray
+   return stackNameArray
+end display_GetHiddenArray
 
-function stack_FindNameData pSearchStackLabel, pTestProperty
-   put revLoadedStacks ("application") into dStackNames
-   repeat for each line dStackName in dStackNames
-      if pTestProperty is not empty then
-         if the pTestProperty of stack dStackName is not empty then
-            next repeat
-         end if
-      end if
-      
-      put the label of stack dStackName into stackLabel
-      switch
-         case pSearchStackLabel is empty
-         case stackLabel = pSearchStackLabel
-            if word 1 to -1 of stackLabel is empty then put "Space" into stackLabel
-            put displayView into stackNameData [dStackName]["displayView"]
-            put stackLabel into stackNameData [dStackName]["stackLabel"]
-            --
-            if pTestProperty is not empty then
-               put pTestProperty into stackNameData [dStackName]["prop"][pTestProperty]
-            end if
-            break
-         default
-            -- next repeat
-      end switch
-   end repeat
-   return stackNameData
-end stack_FindNameData
-
-function stack_FindNames nameStem
-   -- could use filter
-   put revLoadedStacks ("application") into loadedStackNames
-   repeat for each line stackName in loadedStackNames
-      if stackName begins with nameStem then
-         put stackName & CR after foundStackNames
-      end if
-   end repeat
-   delete char -1 of foundStackNames
-   return foundStackNames
-end stack_FindNames
-
-function stack_ListNamedViews nameStem
-   put stack_FindNames (nameStem) into sNames
-   repeat for each line sName in sNames
-      if exists (control 1 of card 1) is false then next repeat
+command display_ShowHidden
+   put display_GetHiddenArray() into stackNameArray
+   repeat for each key stackName in stackNameArray
+      put stackNameArray [stackName]["loc"] into stackLoc
+      put stackNameArray [stackName]["rect"] into stackRect
       --
-      put the long id of control 1 of card 1 of stack sName into sView
-      put revRuggedId (sView) & CR after namedViews
+      set the rect of stack stackName to stackRect
+      set the visible of stack stackName to true
    end repeat
-   return namedViews
-end stack_ListNamedViews
+end display_ShowHidden
 
-function stack_FindNames nameStem
-   -- could use filter
-   put revLoadedStacks ("application") into loadedStackNames
-   repeat for each line stackName in loadedStackNames
-      if stackName begins with nameStem then
-         put stackName & CR after foundStackNames
+command display_HideViews isHidden
+   put isHidden is true into isHidden
+   put display_ListStackNames() into stackNames
+   --
+   display_SetHidden stackNames, isHidden
+end display_HideViews
+
+function stack_NamesFromObjects sObjects
+   repeat for each line sObject in sObjects
+      put the stack_Name of sObject & CR after stackNames
+   end repeat
+   delete char -1 of stackNames
+   return stackNames
+end stack_NamesFromObjects
+
+command display_Gather
+   put display_ListStackNames() into stackNames
+   repeat for each line stackName in stackNames
+      set the cursor to busy
+      set the loc of stack stackName to the screenloc
+      show stack stackName
+   end repeat
+end display_Gather
+
+
+--> Display | List
+-
+function display_ListStackNames pSearchStackLabel, pSearchViewTitle
+   if pSearchStackLabel is empty then
+      put display_List() into dViews
+      put stack_NamesFromObjects (dViews) into stackNames
+      return stackNames
+   end if
+   
+   # Old way?
+   put display_FindStackNameArray (pSearchStackLabel, pSearchViewTitle) into displayViewArray
+   --
+   put keys (displayViewArray) into displayStackNames
+   sort displayStackNames
+   return displayStackNames
+end display_ListStackNames
+
+function display_List pViewNames, pStackLabel
+   # List open stacks with a UX
+   put stack_ListOpen() into dStackNames
+   -- put revLoadedStacks ("application") into loadedStackNames
+   
+   # Filter
+   repeat for each line dStackName in dStackNames
+      if dStackName is among the items of "View|Index|Simple" then
+         next repeat -- keep hidden
+      end if
+      
+      get the label of stack dStackName
+      if (pStackLabel is not empty) AND (it is not pStackLabel) then
+         next repeat
+      end if
+      -- 
+      if exists (control 1 of card 1 of stack dStackName) then
+         put the long id of control 1 of card 1 of stack dStackName into sView
+         put the view_Name of sView into testViewName
+         --
+         if pViewNames is empty then
+            switch
+               case testViewName begins with "View|Array|"
+               case testViewName begins with "View|Index|"
+               case testViewName begins with "View|Tree|"
+               case testViewName begins with "View|Display|"
+                  put revRuggedID (sView) & CR after foundViews
+                  break
+               default
+                  -- get testViewName
+            end switch
+         else
+            if testViewName is among the items of pViewNames then
+               put sView & CR after foundViews
+            end if
+         end if
       end if
    end repeat
-   delete char -1 of foundStackNames
-   return foundStackNames
-end stack_FindNames
+   delete char -1 of foundViews
+   return foundViews
+end display_List
 
-function stack_ListNames pStackNames
-   switch pStackNames
-      case empty
-         return stack_ListOpen()
-      case "open"
-         return the openstacks
-      case "loaded"
-         return revLoadedStacks ("application")
-      default
-         -- could check they exist
-         return pStackNames
-   end switch
-end stack_ListNames
+function display_ListViews pSearchStackLabel, pSearchViewTitle
+   put display_FindStackNameArray (pSearchStackLabel, pSearchViewTitle) into displayViewArray
+   repeat for each key stackLabel in displayViewArray
+      put displayViewArray [stackLabel]["displayView"] into dView
+      put dView & CR after displayViews
+   end repeat
+   delete char -1 of displayViews
+   return displayViews
+end display_ListViews
+
+function display_ListIndexStackNames
+   put the openstacks into indexStackNames
+   -- filter indexStackNames with "Display Index *"
+   sort indexStackNames by word -1 of each
+   return indexStackNames
+end display_ListIndexStackNames
 
 
 --> Display | Find | One
@@ -331,6 +346,137 @@ function display_FindStackNameArray pSearchStackLabel, pSearchViewTitle, pPretty
 end display_FindStackNameArray
 
 
-
---> Deps
+--> Stack | List
 -
+function stack_ListNamedViews nameStem
+   put stack_FindNames (nameStem) into sNames
+   repeat for each line sName in sNames
+      if exists (control 1 of card 1) is false then next repeat
+      --
+      put the long id of control 1 of card 1 of stack sName into sView
+      put revRuggedId (sView) & CR after namedViews
+   end repeat
+   return namedViews
+end stack_ListNamedViews
+
+function stack_FindNames nameStem
+   -- could use filter
+   put revLoadedStacks ("application") into loadedStackNames
+   repeat for each line stackName in loadedStackNames
+      if stackName begins with nameStem then
+         put stackName & CR after foundStackNames
+      end if
+   end repeat
+   delete char -1 of foundStackNames
+   return foundStackNames
+end stack_FindNames
+
+function stack_ListOpen
+   put the openstacks into stackNames
+   repeat for each line stackName in stackNames
+      switch
+         case stackName = "Message Box"
+         case char 1 to 3 of stackName = "rev"
+         case char 1 to 4 of stackName = "com."
+         case the scriptonly of stack stackName is true
+            next repeat
+         default
+            put stackName & CR after appStackNames
+      end switch
+   end repeat
+   delete char -1 of appStackNames
+   return appStackNames
+end stack_ListOpen
+
+function stack_ListLabeled sLabel
+   put revLoadedStacks ("application") into dStackNames
+   repeat for each line dStackName in dStackNames
+      if the label of stack dStackName = sLabel then
+         put dStackName & CR after foundStackNames
+      end if
+   end repeat
+   delete char -1 of foundStackNames
+   return foundStackNames
+end stack_ListLabeled
+
+function stack_FindNameData pSearchStackLabel, pTestProperty
+   put revLoadedStacks ("application") into dStackNames
+   repeat for each line dStackName in dStackNames
+      if pTestProperty is not empty then
+         if the pTestProperty of stack dStackName is not empty then
+            next repeat
+         end if
+      end if
+      
+      put the label of stack dStackName into stackLabel
+      switch
+         case pSearchStackLabel is empty
+         case stackLabel = pSearchStackLabel
+            if word 1 to -1 of stackLabel is empty then put "Space" into stackLabel
+            put displayView into stackNameData [dStackName]["displayView"]
+            put stackLabel into stackNameData [dStackName]["stackLabel"]
+            --
+            if pTestProperty is not empty then
+               put pTestProperty into stackNameData [dStackName]["prop"][pTestProperty]
+            end if
+            break
+         default
+            -- next repeat
+      end switch
+   end repeat
+   return stackNameData
+end stack_FindNameData
+
+function stack_FindNameData pSearchStackLabel, pTestProperty
+   put revLoadedStacks ("application") into dStackNames
+   repeat for each line dStackName in dStackNames
+      if pTestProperty is not empty then
+         if the pTestProperty of stack dStackName is not empty then
+            next repeat
+         end if
+      end if
+      
+      put the label of stack dStackName into stackLabel
+      switch
+         case pSearchStackLabel is empty
+         case stackLabel = pSearchStackLabel
+            if word 1 to -1 of stackLabel is empty then put "Space" into stackLabel
+            put displayView into stackNameData [dStackName]["displayView"]
+            put stackLabel into stackNameData [dStackName]["stackLabel"]
+            --
+            if pTestProperty is not empty then
+               put pTestProperty into stackNameData [dStackName]["prop"][pTestProperty]
+            end if
+            break
+         default
+            -- next repeat
+      end switch
+   end repeat
+   return stackNameData
+end stack_FindNameData
+
+function stack_FindNames nameStem
+   -- could use filter
+   put revLoadedStacks ("application") into loadedStackNames
+   repeat for each line stackName in loadedStackNames
+      if stackName begins with nameStem then
+         put stackName & CR after foundStackNames
+      end if
+   end repeat
+   delete char -1 of foundStackNames
+   return foundStackNames
+end stack_FindNames
+
+function stack_ListNames pStackNames
+   switch pStackNames
+      case empty
+         return stack_ListOpen()
+      case "open"
+         return the openstacks
+      case "loaded"
+         return revLoadedStacks ("application")
+      default
+         -- could check they exist
+         return pStackNames
+   end switch
+end stack_ListNames

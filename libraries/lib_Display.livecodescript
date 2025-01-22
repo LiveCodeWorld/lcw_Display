@@ -357,13 +357,6 @@ command stack_Show displayView
    show stack stackName
 end stack_Show
 
-function display_ListIndexStackNames
-   put the openstacks into indexStackNames
-   filter indexStackNames with "Display Index *"
-   sort indexStackNames by word -1 of each
-   return indexStackNames
-end display_ListIndexStackNames
-
 command stack_Position stackName, pLocOrRect
    switch
       case pLocOrRect = "click"
@@ -441,24 +434,6 @@ end display_HkeyLines
 
 --> Display | Utilities
 -
-function display_ListStackNames pSearchStackLabel, pSearchViewTitle
-   put display_FindStackNameArray (pSearchStackLabel, pSearchViewTitle) into displayViewArray
-   --
-   put keys (displayViewArray) into displayStackNames
-   sort displayStackNames
-   return displayStackNames
-end display_ListStackNames
-
-function display_ListViews pSearchStackLabel, pSearchViewTitle
-   put display_FindStackNameArray (pSearchStackLabel, pSearchViewTitle) into displayViewArray
-   repeat for each key stackLabel in displayViewArray
-      put displayViewArray [stackLabel]["displayView"] into dView
-      put dView & CR after displayViews
-   end repeat
-   delete char -1 of displayViews
-   return displayViews
-end display_ListViews
-
 command display_Spin lineOrNum, pIndexView, pLineColour
    set the cursor to busy
    if exists (pIndexView) is false then
