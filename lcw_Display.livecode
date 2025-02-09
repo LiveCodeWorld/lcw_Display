@@ -11,6 +11,7 @@ version: 0.1
 --> Events
 -
 getprop project_Deps
+   return "lcw,lcw_Authoring,lcw_Menus,lcw_Tools,lcw_Project"
    return "lcw,lcw_Menus,lcw_Script,lcw_Tools"
 end project_Deps
 

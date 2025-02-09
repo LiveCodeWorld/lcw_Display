@@ -348,6 +348,22 @@ end display_FindStackNameArray
 
 --> Stack | List
 -
+function stack_ListNames pWhichOrFilter
+   switch pWhichOrFilter
+      case empty
+         return stack_ListOpen()
+      case "open"
+         return the openstacks
+      case "loaded"
+         return revLoadedStacks ("application")
+      default
+         -- assume it is a filter for "loaded"
+         put revLoadedStacks ("application") into stackNames
+         filter stackNames with pWhichOrFilter
+         return stackNames
+   end switch
+end stack_ListNames
+
 function stack_ListNamedViews nameStem
    put stack_FindNames (nameStem) into sNames
    repeat for each line sName in sNames
@@ -466,17 +482,3 @@ function stack_FindNames nameStem
    delete char -1 of foundStackNames
    return foundStackNames
 end stack_FindNames
-
-function stack_ListNames pStackNames
-   switch pStackNames
-      case empty
-         return stack_ListOpen()
-      case "open"
-         return the openstacks
-      case "loaded"
-         return revLoadedStacks ("application")
-      default
-         -- could check they exist
-         return pStackNames
-   end switch
-end stack_ListNames
