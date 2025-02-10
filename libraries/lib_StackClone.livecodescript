@@ -171,16 +171,16 @@ command stack_Clone stackNameToClone, pStackLabel, pCloneName, pDestroyBoolean
    if exists (stack stackNameToClone) is false then return empty
    --
    stack_CloneInvisible stackNameToClone, pCloneName, pDestroyBoolean
-   put the result into clonedStackName
+   put the result into cloneStackName
    --
    if pStackLabel is not empty then
-      set the label of stack clonedStackName to pStackLabel
+      set the label of stack cloneStackName to pStackLabel
    end if
    --
-   stack_SetToMainScreen clonedStackName
-   set the visible of stack clonedStackName to true
+   stack_SetToMainScreen cloneStackName
+   set the visible of stack cloneStackName to true
    --
-   put the name of stack clonedStackName into clonedStack
+   put the name of stack cloneStackName into clonedStack
    return clonedStack
 end stack_Clone
 

@@ -22,6 +22,14 @@ constant ArrayViewName = "View|Tree|Widget with Title"
 
 --> Working on
 -
+private function _DisplayView cloneStackName
+   put the long id of cd 1 of stack cloneStackName into firstCard
+   
+   -- hacky (change to view_Object or displayed_Object of card?)
+   put the long id of control 1 of firstCard into displayView
+   return displayView
+end _DisplayView
+
 command display_SetInteractions displayView, menuBit, pDoubleUp, pLibName
    -- old use "set the tool_MenuBit of dView"
    put "Global |" && menuBit && "| Menu" into titleMenu
@@ -289,7 +297,8 @@ private command _CreateInvisibleData someArray, pTitle, pStackLabel, pFoldedArra
    put the result into cloneStackName
    if exists (stack cloneStackName) is false then return empty
    
-   put the long id of control 1 of cd 1 of stack cloneStackName into displayView
+   -- put the long id of control 1 of cd 1 of stack cloneStackName into displayView
+   put _DisplayView (cloneStackName) into displayView
    --
    set the displayed_Data of displayView to someArray
    if pFoldedArray is an array then
