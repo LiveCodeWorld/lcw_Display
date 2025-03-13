@@ -13,6 +13,11 @@ Full help text can be found on the linked wiki for the view.*/
 
 --> Working on
 -
+-- getprop menu_Target
+   -- return the long id of control 1 of cd 1 of stack "View|Camera"
+   return the long id of me
+end menu_Target
+
 
 --> Events
 -
@@ -26,6 +31,7 @@ command LayoutControl pRect
    if pRect is empty then put the rect of me into pRect
    
    -- do your geometry here
+   set the rect of me to pRect
    unlock screen
 end LayoutControl
 

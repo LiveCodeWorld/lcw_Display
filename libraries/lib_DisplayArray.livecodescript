@@ -306,12 +306,8 @@ private command _CreateInvisibleData someArray, pTitle, pStackLabel, pFoldedArra
       set the fold_State of displayView to pFoldedArray
    end if
    
-   -- custom stuff
-   set the card_Margin of displayView to 0
-   set the title_Colour of displayView to "random"
-   put the result into titleColour
-   put colour_GetDarkOrLight (titleColour) into titleTextColour
-   set the title_TextColour of displayView to titleTextColour
+   # Title Colour
+   display_SetTitleColour displayView
    --
    if line 1 of keys (someArray) is a number then
       set the tree_SortType of displayView to "numeric"
@@ -328,6 +324,18 @@ private command _CreateInvisibleData someArray, pTitle, pStackLabel, pFoldedArra
    --
    return displayView
 end _CreateInvisibleData
+
+command display_SetTitleColour displayView, pTitleColour
+   if pTitleColour is empty then put "random" into pTitleColour
+   
+   set the card_Margin of displayView to 0
+   set the title_Colour of displayView to pTitleColour
+   put the result into titleColour
+   
+   put colour_GetDarkOrLight (titleColour) into titleTextColour
+   set the title_TextColour of displayView to titleTextColour
+   return titleColour
+end display_SetTitleColour
 
 private command stack_SetStyle cloneStackName, pPalette
    switch pPalette
