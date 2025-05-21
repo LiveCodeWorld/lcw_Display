@@ -32,8 +32,256 @@ function text_EditorApplicationPath
 end text_EditorApplicationPath
 
 
+--> Module | DepScript
+-
+getprop module_DepStackName
+   put the stack_name of the target into sName
+   put sName & "Deps" into depStackName
+   return depStackName
+end module_DepStackName
+
+function scriptDeps_Collect hKeys, stackName 
+   # Scripts Metadata
+   put metadata_ConstructScriptHeader (stackName, "Deps") into depScript
+   put CR&CR & hkeyIndex_CollectScript (hKeys) after depScript
+   return depScript
+end scriptDeps_Collect
+
+command module_CreateBehaviorDepStack sObject, pDepScript
+   if exists (sObject) is false then
+      return "Error, object does not exist:" && sObject
+   end if
+   
+   put the module_DepStackName of sObject into depStackName
+   switch
+      case depStackName is empty
+         return "Error, the module_DepStackName is empty" -- getprop is missing?
+      case exists (stack depStackName) is true
+         return "Error, stack already exists:" && depStackName
+      default
+         # Create behavior stack (don't save)
+         create stack depStackName
+         --
+         put the module_BahaviorFolder of sObject into bFolder
+         put bFolder & depStackName & ".livecodescript" into bPath
+         set the filename of stack depStackName to bPath
+         set the destroyStack of stack depStackName to true
+         set the destroyWindow of stack depStackName to true
+         --
+         go to stack depStackName
+         
+         # Collect depscript if not specified
+         if pDepScript is empty then
+            put the module_BehaviorDepScript of sObject into pDepScript
+         end if
+         
+         # Add handlers to behavior created stack (don't save)
+         set the script of stack depStackName to pDepScript
+         return depStackName
+   end switch 
+end module_CreateBehaviorDepStack
+
+getprop module_BehaviorDepScript [fromFolder]
+   put the module_ExternalHkeys [fromFolder] of the target into hkeyDeps
+   
+   # Collect Depscript
+   -- put script_CollectFromObjects (hkeyDeps, true) into depScript
+   put the module_DepStackName of the target into stackName
+   put scriptDeps_Collect (hkeyDeps, stackName) into depScript
+   --
+   return depScript
+end module_BehaviorDepScript
+
+getprop module_ExternalHkeys [fromFolder]
+   put the long id of the target into sObject
+   put the module_BehaviorDepHkeyArray [fromFolder] of sObject into hkeyArray
+   put module_ListExternalHkeys (hkeyArray, sObject) into hKeys
+   return hKeys
+end module_ExternalHkeys
+
+function module_GetDepScript hkeyArray, sObject
+   put the module_DepStackName of sObject into stackName
+   --
+   put module_ListExternalHkeys (hkeyArray, sObject) into hkeyDeps
+   put scriptDeps_Collect (hkeyDeps, stackName) into depScript
+   return depScript
+end module_GetDepScript
+
+function module_ListExternalHkeys hkeyArray, sObject
+   put the module_Hierarchy [true] of sObject into hObjects
+   --
+   put array_ListKeys (hkeyArray) into hKeys
+   repeat for each line hObject in hObjects
+      put revRuggedID (hObject) into rObject
+      filter hKeys without ("*" && rObject)
+   end repeat
+   hkey_SortIndex hKeys
+   return hKeys
+end module_ListExternalHkeys
+
+getprop module_Hierarchy [fromFolder]
+   local oHierarchy, bHierarchy
+   --
+   put the module_Name of the target into moduleName
+   if moduleName is empty then return empty
+   put view_GetTemplateObject (moduleName) into mObject
+   
+   # Behaviors and object hieararchy
+   if fromFolder is not false then
+      put the module_Behaviors of mObject into oHierarchy
+   else
+      put the behavior_Objects of mObject into oHierarchy
+   end if
+   
+   put word 1 to -1 of oHierarchy into oHierarchy
+   
+   # Rest of object hierarchy
+   hierachy_AddStackObjects bHierarchy, mObject
+   put oHierarchy & CR & word 1 to -1 of bHierarchy into moduleHierarchy
+   --
+   return moduleHierarchy
+end module_Hierarchy
+
+
 --> Working on
 -
+function scriptSuite_ConstructSection suiteTitle, hKeys
+   local suiteSectionScript
+   
+   scriptSuite_Construct suiteSectionScript, suiteTitle, hKeys
+   put the result into missingHkeys
+   return suiteSectionScript
+end scriptSuite_ConstructSection
+
+command scriptSuite_Construct @suiteSectionScript, suiteTitle, hKeys
+   put script_ConstructSuiteHeader (suiteTitle) & CR after suiteSectionScript
+   repeat for each line hKey in hKeys
+      put handler_Get (hKey) into someHandler
+      --
+      if someHandler is empty then
+         put hKey & CR after missingHkeys
+      else
+         put someHandler & CR&CR after suiteSectionScript
+         -- text_AddParagraph someHandler, suiteSectionScript
+      end if
+   end repeat
+   delete char -2 to -1 of suiteSectionScript
+   delete char -1 of missingHkeys
+   return missingHkeys
+end scriptSuite_Construct
+
+function hkeyIndex_CollectScript hKeys
+   local depScript
+   
+   hkeyIndex_Split hKeys, sortedHKeys, propHandlers, privateHkeys
+   --
+   -- put scriptSuite_ConstructSection ("Props", propHandlers) after depScript
+   if propHandlers is not empty then
+      scriptSuite_Construct depScript, "Props", propHandlers
+      put the result into missingHkeys
+   end if
+   
+   -- put CR & scriptSuite_ConstructSection ("Hkeys", sortedHKeys) after depScript 
+   if sortedHKeys is not empty then
+      put CR&CR&CR after depScript
+      scriptSuite_Construct depScript, "Hkeys", sortedHKeys
+      line_Add the result, missingHkeys
+      put CR&CR&CR after depScript
+   end if
+   
+   -- put CR&CR&CR & scriptSuite_ConstructSection ("Private", privateHkeys) after depScript 
+   if privateHkeys is not empty then
+      put CR&CR&CR after depScript
+      scriptSuite_Construct depScript, "Private", privateHkeys
+      line_Add the result, missingHkeys
+   end if
+   
+   if missingHkeys is not empty then
+      put script_ConstructSuiteHeader ("Variables") & CR into varSuite
+      put "local LocalArray" & CR&CR&CR after varSuite
+      --
+      put scriptDeps_ConstuctMissingGetprop (missingHkeys) into missingGetprop
+      --
+      put missingGetprop & CR&CR after varSuite
+      put varSuite before depScript
+   end if
+   
+   return depScript
+end hkeyIndex_CollectScript
+
+function scriptDeps_ConstuctMissingGetprop missingHkeys
+   replace quote with "'" in missingHkeys
+   
+   # Construct hBody
+   repeat for each line unQuotedHkey in missingHkeys
+      put "put" && kwote (unQuotedHkey) && "after missingHkeys" & CR after hBody
+   end repeat
+   put "--" & CR after hBody
+   put "replace" && kwote("'") && "with quote in missingHkeys" & CR after hBody
+   put "return missingHkeys" after hBody
+   --
+   put handler_Construct ("getprop", "missing_Hkeys", hBody, false) into missingGetprop
+   return missingGetprop
+end scriptDeps_ConstuctMissingGetprop
+
+command hkeyIndex_Split hKeys, @sortedHKeys, @propHandlers, @privateHkeys
+   # Sort sortedHKeys
+   put hKeys into sortedHKeys
+   hkey_SortIndex sortedHKeys
+   
+   # Extract propHandlers
+   put "^(G|S) .+" into wildcardPattern
+   filter sortedHKeys with regex pattern wildcardPattern into propHandlers
+   filter sortedHKeys without regex pattern wildcardPattern
+   sort lines of propHandlers by word 2 of each
+   
+   # Extract privateHkeys
+   filter sortedHKeys with "P*" into privateHkeys
+   filter sortedHKeys without "P*"
+end hkeyIndex_Split
+
+function hkeyIndex_ConstructDepScriptArray hKeys
+   hkeyIndex_Split hKeys, sortedHKeys, propHandlers, privateHkeys
+   
+   put array_EmptyIndex (propHandlers) into depScriptArray ["propHandlers"]
+   put array_EmptyIndex (sortedHKeys) into depScriptArray ["hKeys"]
+   put array_EmptyIndex (privateHkeys) into depScriptArray ["privateHkeys"]
+   --
+   return depScriptArray
+end hkeyIndex_ConstructDepScriptArray
+
+command display_HkeyArrayLines hkeyArray, sObject, pDisplayView
+   local mTitle, mLineTitle, mUp
+   --
+   put the module_ExternalHkeys [hKeyArray] of sObject into hKeys
+   put the short name of sObject into pTitle
+   put hkeyIndex_ConstructDepScriptArray (hKeys) into depScriptArray
+   
+   put the project_Name of me into projectName
+   -- display_Tool hKeys, pTitle, "DepScript Hkeys", projectName, "Hkey | Lines" -- crashes when resized
+   display_Tool depScriptArray, pTitle, "DepScript Hkeys"
+   put the result into dView
+   --
+   set the displayed_Object of dView to sObject
+   set the hkey_Array of dView to hkeyArray
+   --
+   return dView
+end display_HkeyArrayLines
+
+command display_HkeyLines hkeyLines, pTitle, pDisplayView
+   local mTitle, mLineTitle, mUp
+   --
+   put the project_Name of me into projectName
+   display_Tool hkeyLines, pTitle, "DepScript Hkeys", projectName, "Hkey | Lines"
+   put the result into dView
+   --
+   return dView
+end display_HkeyLines
+
+on mDoubleUp_HkeyLines displayView, hKeyLine
+   hkey_Edit hKeyLine
+end mDoubleUp_HkeyLines
+
 command display_Index someIndex, pDisplayTitle, pTreeMenuTitle, pLineMenuTitle, pMouseUpCommand, pMouseDoubleUpCommand, pDragCommand, pPalette, pTopLeft
    -- phase out and use "display_Lines" instead
    put empty into oRect
@@ -246,10 +494,6 @@ command mDoubleUp_EditOldMenuScript targetObject, globalMenuCardName
    edit the script of card globalMenuCardName of stack longStackFile
 end mDoubleUp_EditOldMenuScript
 
-on mDoubleUp_HkeyLine displayView, hKeyLine
-   hkey_Edit hKeyLine
-end mDoubleUp_HkeyLine
-
 on mDouble_EditStack displayView, stackName
    edit the script of stack stackName
 end mDouble_EditStack
@@ -423,13 +667,6 @@ command display_EditedStacks
    display_SetInteractions displayView, "Edited | Tree", "mDouble_EditStack"
    return displayView
 end display_EditedStacks
-
-command display_HkeyLines hkeyLines, someTitle
-   local mTitle, mLineTitle, mUp
-   display_Index hkeyLines, someTitle, mTitle, mLineTitle, mUp, "mDoubleUp_HkeyLine"
-   put the result into indexView
-   set the multiple_Hilites of indexView to false
-end display_HkeyLines
 
 
 --> Display | Utilities
@@ -718,4 +955,3 @@ private command _setTitles @widgetDisplayTitle, @displayStackLabel, pDisplayTitl
       put word 1 to -1 of item 2 of pDisplayTitle into displayStackLabel
    end if
 end _setTitles
-
