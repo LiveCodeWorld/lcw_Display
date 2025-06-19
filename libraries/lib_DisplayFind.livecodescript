@@ -18,6 +18,42 @@ local LocalArray
 
 --> Working on
 -
+function display_FindView displayStackLabel, pDisplayViewTitle, pTypes
+   put revLoadedStacks ("application") into dStackNames
+   filter dStackNames with "Display *"
+   repeat for each line dStackName in dStackNames
+      -- could check for type of view
+      
+      if the label of stack dStackName = displayStackLabel then
+         put the long id of group 1 of stack dStackName into displayView
+         if pDisplayViewTitle is empty then
+            return displayView
+         else if the title_Text of displayView = pDisplayViewTitle then
+            return displayView
+         end if
+      end if
+   end repeat
+   return empty
+   
+   -- Looks for Display Array, and Display Index views depending on pTypes
+   if pTypes is empty then put "Display Index,Display Array" into pTypes
+   
+   put revLoadedStacks ("application") into dStackNames
+   repeat for each line dStackName in dStackNames
+      get word 1 to 2 of dStackName
+      if it is not among the items of pTypes then next repeat
+      if the label of stack dStackName = displayStackLabel then
+         put the long id of group 1 of stack dStackName into displayView
+         if pDisplayViewTitle is empty then
+            return displayView
+         else if the title_Text of displayView = pDisplayViewTitle then
+            return displayView
+         end if
+      end if
+   end repeat
+   return empty
+end display_FindView
+
 function display_GetHidden
    put display_GetHiddenArray() into stackNameArray
    put keys (stackNameArray) into sNames
@@ -248,26 +284,6 @@ end display_FindArrayView
 function display_FindIndexView displayStackLabel, pDisplayViewTitle
    return display_FindView (displayStackLabel, pDisplayViewTitle, "Display Index")
 end display_FindIndexView
-
-function display_FindView displayStackLabel, pDisplayViewTitle, pTypes
-   -- Looks for Display Array, and Display Index views depending on pTypes
-   if pTypes is empty then put "Display Index,Display Array" into pTypes
-   
-   put revLoadedStacks ("application") into dStackNames
-   repeat for each line dStackName in dStackNames
-      get word 1 to 2 of dStackName
-      if it is not among the items of pTypes then next repeat
-      if the label of stack dStackName = displayStackLabel then
-         put the long id of group 1 of stack dStackName into displayView
-         if pDisplayViewTitle is empty then
-            return displayView
-         else if the title_Text of displayView = pDisplayViewTitle then
-            return displayView
-         end if
-      end if
-   end repeat
-   return empty
-end display_FindView
 
 function display_FirstOpenView viewName, pStackLabel, pViewTitle
    view_NormalizeName viewName
