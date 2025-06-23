@@ -18,6 +18,48 @@ local LocalArray
 
 --> Working on
 -
+function display_List pViewNames, pStackLabel
+   # List open stacks with a UX
+   put stack_ListOpen() into dStackNames
+   -- put revLoadedStacks ("application") into loadedStackNames
+   
+   # Filter
+   repeat for each line dStackName in dStackNames
+      if dStackName is among the items of "View|Index|Simple" then
+         next repeat -- keep hidden
+      end if
+      
+      get the label of stack dStackName
+      if (pStackLabel is not empty) AND (it is not pStackLabel) then
+         next repeat
+      end if
+      -- 
+      if exists (control 1 of card 1 of stack dStackName) then
+         put the long id of control 1 of card 1 of stack dStackName into sView
+         put the view_Name of sView into testViewName
+         --
+         if pViewNames is empty then
+            switch
+               case testViewName begins with "View|Array|"
+               case testViewName begins with "View|Index|"
+               case testViewName begins with "View|Tree|"
+               case testViewName begins with "View|Display|"
+                  put revRuggedID (sView) & CR after foundViews
+                  break
+               default
+                  -- get testViewName
+            end switch
+         else
+            if testViewName is among the items of pViewNames then
+               put sView & CR after foundViews
+            end if
+         end if
+      end if
+   end repeat
+   delete char -1 of foundViews
+   return foundViews
+end display_List
+
 function display_FindView displayStackLabel, pDisplayViewTitle, pTypes
    put revLoadedStacks ("application") into dStackNames
    filter dStackNames with "Display *"
@@ -139,48 +181,6 @@ function display_ListStackNames pSearchStackLabel, pSearchViewTitle
    sort displayStackNames
    return displayStackNames
 end display_ListStackNames
-
-function display_List pViewNames, pStackLabel
-   # List open stacks with a UX
-   put stack_ListOpen() into dStackNames
-   -- put revLoadedStacks ("application") into loadedStackNames
-   
-   # Filter
-   repeat for each line dStackName in dStackNames
-      if dStackName is among the items of "View|Index|Simple" then
-         next repeat -- keep hidden
-      end if
-      
-      get the label of stack dStackName
-      if (pStackLabel is not empty) AND (it is not pStackLabel) then
-         next repeat
-      end if
-      -- 
-      if exists (control 1 of card 1 of stack dStackName) then
-         put the long id of control 1 of card 1 of stack dStackName into sView
-         put the view_Name of sView into testViewName
-         --
-         if pViewNames is empty then
-            switch
-               case testViewName begins with "View|Array|"
-               case testViewName begins with "View|Index|"
-               case testViewName begins with "View|Tree|"
-               case testViewName begins with "View|Display|"
-                  put revRuggedID (sView) & CR after foundViews
-                  break
-               default
-                  -- get testViewName
-            end switch
-         else
-            if testViewName is among the items of pViewNames then
-               put sView & CR after foundViews
-            end if
-         end if
-      end if
-   end repeat
-   delete char -1 of foundViews
-   return foundViews
-end display_List
 
 function display_ListViews pSearchStackLabel, pSearchViewTitle
    put display_FindStackNameArray (pSearchStackLabel, pSearchViewTitle) into displayViewArray
