@@ -26,11 +26,6 @@ local LocalArray
 
 --> Move
 -
-function text_EditorApplicationPath
-   put "/Applications/Visual Studio Code.app" into applicationPath
-   return applicationPath
-end text_EditorApplicationPath
-
 
 --> Module | DepScript
 -

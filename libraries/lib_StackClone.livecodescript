@@ -12,21 +12,10 @@ version: 0.1
 
 --> Working on
 -
-private command _CheckAndResetCloneName @pCloneName
-   if exists (stack pCloneName) is false then
-      -- let's just use it
-      return false 
-   end if
-   
-   -- otherwise let's make up a numbered version
-   put stack_ConstructNewCloneName (pCloneName) into newStackName
-   if exists (stack newStackName) is true then
-      -- should never happen
-      throw "Error, command '_CheckAndResetCloneName' made a clone name that already exists (which is strange):" && newStackName
-   end if
-   put newStackName into pCloneName
-   return true
-end _CheckAndResetCloneName
+function stack_CloneName pCloneName
+   _CheckAndResetCloneName pCloneName
+   return pCloneName
+end stack_CloneName
 
 function stack_ConstructNewCloneName stackName
    -- use this when you want multiple stacks of the same numbered name style
@@ -54,6 +43,22 @@ function stack_ConstructNewCloneName stackName
       return empty
    end if
 end stack_ConstructNewCloneName
+
+private command _CheckAndResetCloneName @pCloneName
+   if exists (stack pCloneName) is false then
+      -- let's just use it
+      return false 
+   end if
+   
+   -- otherwise let's make up a numbered version
+   put stack_ConstructNewCloneName (pCloneName) into newStackName
+   if exists (stack newStackName) is true then
+      -- should never happen
+      throw "Error, command '_CheckAndResetCloneName' made a clone name that already exists (which is strange):" && newStackName
+   end if
+   put newStackName into pCloneName
+   return true
+end _CheckAndResetCloneName
 
 function stack_ClonedStackNames stackName
    put the mainstacks into stackNames
@@ -280,44 +285,6 @@ command stack_Create stackName, viewName, pCardMargin, pStackRect, pCardScript, 
    return createdObject
 end stack_Create
 
-private command _CreateStackWithView controlOrViewName, pStackName, pCardMargin, pStackStyle, pCardScript
-   if exists (controlOrViewName) then
-      put controlOrViewName into templateObject
-      put the view_Name of controlOrViewName into viewName
-      if viewName is empty then
-         put lcw_Ask ("Give this new control a view_Name...", "View|Something|Or Other") into viewName
-      end if
-   else
-      put controlOrViewName into viewName
-      put view_GetTemplateObject (viewName) into templateObject
-      if exists(templateObject) is false then return empty
-   end if
-   
-   if pStackName is empty then
-      put stack_ConstructNewCloneName (viewName) into pStackName
-   else if exists (stack pStackName) is true then
-      put stack_ConstructNewCloneName (pStackName) into pStackName
-   end if
-   
-   set lockmessages to true -- Constellation bug
-   create invisible stack pStackName
-   put it into stackObject
-   set lockmessages to false
-   set the destroystack of stackObject to true
-   set the destroywindow of stackObject to true
-   if pStackStyle is not empty then set the style of stackObject to pStackStyle
-   
-   put the long id of card 1 of stackObject into cardObject
-   set the card_Margin of cardObject to pCardMargin
-   
-   if pCardScript is empty then put scaffold_Get ("Resize Stack Template") into pCardScript -- better to use a behavior !!!
-   set the script of cardObject to pCardScript
-   
-   copy templateObject to cardObject
-   put it into createdObject
-   return createdObject
-end _CreateStackWithView
-
 
 --> Stack | Close
 -
@@ -461,6 +428,47 @@ command stack_SetViewSize someSize
          break
    end switch
 end stack_SetViewSize
+
+
+--> Private
+-
+private command _CreateStackWithView controlOrViewName, pStackName, pCardMargin, pStackStyle, pCardScript
+   if exists (controlOrViewName) then
+      put controlOrViewName into templateObject
+      put the view_Name of controlOrViewName into viewName
+      if viewName is empty then
+         put lcw_Ask ("Give this new control a view_Name...", "View|Something|Or Other") into viewName
+      end if
+   else
+      put controlOrViewName into viewName
+      put view_GetTemplateObject (viewName) into templateObject
+      if exists(templateObject) is false then return empty
+   end if
+   
+   if pStackName is empty then
+      put stack_ConstructNewCloneName (viewName) into pStackName
+   else if exists (stack pStackName) is true then
+      put stack_ConstructNewCloneName (pStackName) into pStackName
+   end if
+   
+   set lockmessages to true -- Constellation bug
+   create invisible stack pStackName
+   put it into stackObject
+   set lockmessages to false
+   set the destroystack of stackObject to true
+   set the destroywindow of stackObject to true
+   if pStackStyle is not empty then set the style of stackObject to pStackStyle
+   
+   put the long id of card 1 of stackObject into cardObject
+   set the card_Margin of cardObject to pCardMargin
+   
+   if pCardScript is empty then put scaffold_Get ("Resize Stack Template") into pCardScript -- better to use a behavior !!!
+   set the script of cardObject to pCardScript
+   
+   copy templateObject to cardObject
+   put it into createdObject
+   return createdObject
+end _CreateStackWithView
 
 
 --> Deps
