@@ -24,8 +24,15 @@ You can "view" this library as contaminated :)
 local LocalArray
 
 
---> Move
+--> Working on
 -
+command display_TargetData dView, sData
+   if the optionKey is "Down" then breakpoint
+   --
+   put dView
+   display_Data sData, "Test"
+end display_TargetData
+
 
 --> Module | DepScript
 -
