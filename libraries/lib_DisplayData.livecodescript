@@ -130,7 +130,78 @@ end display_Environment
 
 --> Display | Data
 -
+command display_Tree someData, pTitle, pStackLabel, pFooterTitle, pExpanded, pRect, pToolContext
+   display_InvisibleTool someData, pTitle, pStackLabel, pFoldedArray, pStyle
+   put the result into dView
+   put the tree_View of dView into treeView
+   
+   # Set Footer Icons
+   if pFooterTitle is not empty then
+      put the footer_View of dView into footerView
+      set the footer_Title of footerView to pFooterTitle
+   end if
+   
+   # Expand
+   if pExpanded is not empty then
+      put display_ConstructFoldState (pExpanded) into foldedArray
+      set the fold_State of treeView to foldedArray
+   end if
+   
+   # Position
+   switch pRect
+      case pRect is a number
+         set the stack_Width of dView to pRect
+         break
+      case pRect is a point
+         put item 1 of pRect + 200 into item 3 of pRect
+         put item 2 of pRect + 300 into item 4 of pRect
+         set the stack_Rect of dView to pRect
+         break
+      case pRect is a rect
+         set the stack_Rect of dView to pRect
+         break
+   end switch
+   
+   # Show and set tool context
+   put the stack_Name of dView into cStackName
+   set the visible of stack cStackName to true
+   set the tool_Context of dView to pToolContext
+   --
+   return treeView
+end display_Tree
+
+command display_StandardTool someData, pTitle, pStackLabel, pStyle, pRectHow, pFoldedArray, pToolContext
+   display_InvisibleTool someData, pTitle, pStackLabel, pFoldedArray, pStyle
+   put the result into dView
+   
+   if pFoldedArray is an array then
+      put the tree_View of dView into treeView
+      set the fold_State of treeView to pFoldedArray
+   end if
+   if someData is not an array then
+      put the formatted_Rect [pRectHow] of dView into sRect
+      set the stack_Rect of dView to sRect
+   end if
+   
+   # Show
+   put the stack_Name of dView into cStackName
+   set the visible of stack cStackName to true
+   
+   if someData is an array then
+      # Livecode bug
+      -- doing this after show as formatted values and tree widget issue
+      -- could set offscreen?
+      wait 1 ticks
+      put the formatted_Rect [pRectHow] of dView into sRect
+      set the stack_Rect of dView to sRect
+   end if
+   
+   set the tool_Context of dView to pToolContext
+   return dView
+end display_StandardTool
+
 command display_Data sData, pTitle, pStackLabel, pDisplayView, pPalette, pTopLeft, pFoldedArray
+   -- similar to "display_StandardTool"
    lock screen
    if sData is an array then      
       display_Array sData, pTitle, pStackLabel, pFoldedArray, pDisplayView, pPalette, pTopLeft
@@ -199,8 +270,6 @@ command display_InvisibleArray sArray, pTitle, pStackLabel, pFoldedArray, pDispl
       end if
       return pDisplayView
    else
-      -- _CreateInvisibleData sArray, pTitle, pStackLabel, pFoldedArray, pPalette
-      -- private command _CreateInvisibleData sArray, pTitle, pStackLabel, pFoldedArray, pLocOrRect, pPalette
       constant ArrayViewName = "View|Data"
       
       put ArrayViewName into viewName
@@ -215,7 +284,7 @@ command display_InvisibleArray sArray, pTitle, pStackLabel, pFoldedArray, pDispl
       put the long id of cd 1 of stack cloneStackName into firstCard
       put the long id of control 1 of firstCard into displayView
       --
-      set the displayed_Array [pTitle] of displayView to sArray
+      set the displayed_Data [pTitle] of displayView to sArray
       if pFoldedArray is an array then
          set the fold_State of displayView to pFoldedArray -- sensitive to capitalisation
       end if
@@ -234,7 +303,7 @@ command display_InvisibleArray sArray, pTitle, pStackLabel, pFoldedArray, pDispl
       
       # Set position and style
       -- stack_Position cloneStackName, pTopLeft
-      -- stack_SetStyle cloneStackName, pPalette
+      stack_SetStyle cloneStackName, pPalette
       --
       return displayView
    end if
@@ -245,8 +314,6 @@ command display_Lines sIndex, pTitle, pDoubleUp, pStackLabel, pPalette, pTopLeft
    
    if pStackLabel is empty then
       put space into pStackLabel
-   else
-      put comma & pStackLabel after pTitle
    end if
    
    # Clone Invisible and set index
@@ -489,11 +556,6 @@ command display_InvisibleTool someData, pTitle, pStackLabel, pFoldedArray, pStyl
       return "Error, could not find dView:" && cloneStackName
    end if
    
-   # ShowHow
-   if pStyle is not empty then
-      set the dataView_Style of dView to pStyle
-   end if
-   
    # Display And Show
    if isArray is true then
       set the displayed_Data [pTitle] of dView to someData
@@ -508,41 +570,16 @@ command display_InvisibleTool someData, pTitle, pStackLabel, pFoldedArray, pStyl
       set the drop_Command of indexView to empty
    end if
    
+   # ShowHow
+   if pStyle is not empty then
+      set the dataView_Style of dView to pStyle
+   end if
+   
    # Title Colour
    display_SetTitleColour dView
    
    return dView
 end display_InvisibleTool
-
-command display_StandardTool someData, pTitle, pStackLabel, pStyle, pRectHow, pFoldedArray, pToolContext
-   display_InvisibleTool someData, pTitle, pStackLabel, pFoldedArray, pStyle
-   put the result into dView
-   
-   if pFoldedArray is an array then
-      -- pFoldedArray
-   end if
-   
-   if someData is not an array then
-      put the formatted_Rect [pRectHow] of dView into sRect
-      set the stack_Rect of dView to sRect
-   end if
-   
-   # Show
-   put the stack_Name of dView into cStackName
-   set the visible of stack cStackName to true
-   
-   if someData is an array then
-      # Livecode bug
-      -- doing this after show as formatted values and tree widget issue
-      -- could set offscreen?
-      wait 1 ticks
-      put the formatted_Rect [pRectHow] of dView into sRect
-      set the stack_Rect of dView to sRect
-   end if
-   
-   set the tool_Context of dView to pToolContext
-   return dView
-end display_StandardTool
 
 command display_Tool someData, pTitle, pStackLabel, pStyle, pRectHow, pToolContext, pFoldedArray
    if pTitle is empty then put "Data" into pTitle

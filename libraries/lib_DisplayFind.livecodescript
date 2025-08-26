@@ -93,20 +93,31 @@ function display_FindView displayStackLabel, pDisplayViewTitle, pTypes
    return empty
 end display_FindView
 
-function display_GetHidden
+function display_GetHidden pStackName
    put display_GetHiddenArray() into stackNameArray
+   if pStackName is not empty then
+      delete variable stackNameArray [pStackName]
+   end if
    put keys (stackNameArray) into sNames
    sort sNames
    return sNames
 end display_GetHidden
 
-command display_SetHidden pBoolean, pStackNames
+function display_GetHiddenArray
+   put LocalArray ["Hidden"] into stackNameArray
+   return stackNameArray
+end display_GetHiddenArray
+
+command display_SetHidden pBoolean, pNotStackNames, pStackNames
    put pBoolean is false into isVisible
    if pStackNames is empty then
       put display_ListStackNames() into pStackNames
    end if
    
    repeat for each line stackName in pStackNames
+      if stackName is among the items of pNotStackNames then
+         next repeat
+      end if
       set the visible of stack stackName to isVisible
       display_AddHidden stackName, (isVisible is false)
    end repeat
@@ -121,11 +132,6 @@ command display_AddHidden stackName, pBoolean
    end if
 end display_AddHidden
 
-function display_GetHiddenArray
-   put LocalArray ["Hidden"] into stackNameArray
-   return stackNameArray
-end display_GetHiddenArray
-
 command display_ShowHidden
    put display_GetHiddenArray() into stackNameArray
    repeat for each key stackName in stackNameArray
@@ -139,9 +145,8 @@ end display_ShowHidden
 
 command display_HideViews isHidden
    put isHidden is true into isHidden
-   put display_ListStackNames() into stackNames
    --
-   display_SetHidden stackNames, isHidden
+   display_SetHidden isHidden
 end display_HideViews
 
 function stack_NamesFromObjects sObjects
