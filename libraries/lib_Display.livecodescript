@@ -489,36 +489,6 @@ function stack_GetTop pWithoutDisplay
    return stackName
 end stack_GetTop
 
-command stack_Show displayView
-   -- stops flickr
-   if exists (displayView) is false then
-      put the stack_Name of the target into stackName
-   else
-      put the the stack_Name of displayView into stackName
-   end if
-   show stack stackName
-   go to stack stackName
-end stack_Show
-
-command stack_Position stackName, pLocOrRect
-   switch
-      case pLocOrRect = "click"
-      case pLocOrRect = "mouse"
-         -- put globalLoc (the mouseloc) into mGlobalLoc
-         put the screenmouseloc into mGlobalLoc
-         set the topLeft of stack stackName to mGlobalLoc
-         break
-      case pLocOrRect is a point
-         set the topLeft of stack stackName to pLocOrRect
-         break
-      case pLocOrRect is a rect
-         set the rect of stack stackName to pLocOrRect
-         break
-      default
-         revIDEEnsureOnscreen stackName
-   end switch
-end stack_Position
-
 getprop display_BelowRect [fRect]
    put the long id of the target into tObject
    --

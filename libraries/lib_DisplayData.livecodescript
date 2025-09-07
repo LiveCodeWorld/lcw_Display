@@ -15,18 +15,74 @@ I think it shoud be either a behavior of or part of teh stack script which is no
 
 --> Working on
 -
+command stack_Show displayView
+   -- stops flickr
+   if exists (displayView) is false then
+      put the stack_Name of the target into stackName
+   else
+      put the the stack_Name of displayView into stackName
+   end if
+   show stack stackName
+   go to stack stackName
+end stack_Show
+
+command stack_Position stackName, pLocOrRect
+   switch
+      case pLocOrRect = "click"
+      case pLocOrRect = "mouse"
+         -- put globalLoc (the mouseloc) into mGlobalLoc
+         put the screenmouseloc into mGlobalLoc
+         set the topLeft of stack stackName to mGlobalLoc
+         break
+      case pLocOrRect is a point
+         set the topLeft of stack stackName to pLocOrRect
+         break
+      case pLocOrRect is a rect
+         set the rect of stack stackName to pLocOrRect
+         break
+      default
+         revIDEEnsureOnscreen stackName
+   end switch
+end stack_Position
+
+private command _PositionStack dView, pRect
+   constant sWidth = 300
+   constant sHeight = 300
+   
+   switch
+      case pRect = "mouse"
+         put the screenmouseloc into sRect
+         put item 1 of sRect + sWidth into item 3 of sRect
+         put item 2 of sRect + sHeight into item 4 of sRect
+         set the stack_Rect of dView to sRect
+         -- set the topLeft of stack (the stack_Name of dView) to mGlobalLoc
+         break
+      case pRect is a number
+         set the stack_Width of dView to pRect
+         break
+      case pRect is a point
+         put item 1 of pRect + sWidth into item 3 of pRect
+         put item 2 of pRect + sHeight into item 4 of pRect
+         set the stack_Rect of dView to pRect
+         break
+      case pRect is a rect
+         set the stack_Rect of dView to pRect
+         break
+   end switch
+end _PositionStack
+
 getprop walk_Hierarchy
-   put the name of stack "View|Data" into searchObjects
-   --
-   put CR & the name of stack "lib_MenuPop" after searchObjects
-   put CR & the name of stack "lib_MenuText" after searchObjects
-   --
-   put CR & the name of stack "behavior_ViewData" after searchObjects
-   put CR & the name of stack "behavior_DataTree" after searchObjects
-   put CR & the name of stack "behavior_ViewDataPoly" after searchObjects
-   put CR & the name of stack "behavior_ViewIndex" after searchObjects
-   --
-   return searchObjects
+put the name of stack "View|Data" into searchObjects
+--
+put CR & the name of stack "lib_MenuPop" after searchObjects
+put CR & the name of stack "lib_MenuText" after searchObjects
+--
+put CR & the name of stack "behavior_ViewData" after searchObjects
+put CR & the name of stack "behavior_DataTree" after searchObjects
+put CR & the name of stack "behavior_ViewDataPoly" after searchObjects
+put CR & the name of stack "behavior_ViewIndex" after searchObjects
+--
+return searchObjects
 end walk_Hierarchy
 
 getprop dep_Array
@@ -127,48 +183,102 @@ command display_Environment pRefreshOnly, pProjectNames
    return dView
 end display_Environment
 
+command display_Wiki wikiDomain, pBrowserView, pStackLabel, pStackStyle, pFooterTitle
+   if pStackLabel is empty then put wikiDomain into pStackLabel
+   put wiki_ConstructUrl (wikiDomain) into wikiURL
+   
+   display_InvisibleTool wikiURL, "Wiki", pStackLabel, empty, "tree"
+   put the result into dView
+   put the browser_View of dView into browserView
+   
+   # Set behaviors
+   set the behavior_StackNames of browserView to "behavior_ViewWikiBrowser,behavior_WikiJavascript"
+   
+   # Set Tools
+   put "Global | Data | Wiki | Menu" into mTitle -- "Global | TiddlyWiki | Basic | Menu"
+   set the title_Menu of browserView to mTitle
+   _SetFooter dView, mTitle
+   
+   # Set Style
+   set the body_Type of dView to "browser"
+   _PositionStack dView, pRect
+   
+   # Init javascript
+   set the flag_Handler of browserView to "default"
+   -- set the wiki_EditMode of browserView to true -- javascript error
+   set the external_Links of browserView to true
+   
+   # Show
+   _ShowStack dView, pToolContext
+   
+   # Start server
+   -- wikiServer_StartNode -- wikiServer_Start
+   -- if the result is not empty then wait 20 ticks
+   
+   return browserView
+end display_Wiki
+
 
 --> Display | Data
 -
-command display_Tree someData, pTitle, pStackLabel, pFooterTitle, pExpanded, pRect, pToolContext
-   display_InvisibleTool someData, pTitle, pStackLabel, pFoldedArray, pStyle
+command display_Poly indexArray, pCloneName, pTitle, pLayoutData, pFooterTitle, pRect, pToolContext
+   display_Invisible pCloneName, "Icon Data", "polylist"
    put the result into dView
-   put the tree_View of dView into treeView
    
-   # Set Footer Icons
-   if pFooterTitle is not empty then
-      put the footer_View of dView into footerView
-      set the footer_Title of footerView to pFooterTitle
-   end if
+   # Set poly_Data
+   put indexArray into pData ["poly_Content"]
+   put pLayoutData into pData ["poly_Layout"]
+   put pFooterTitle into pData ["footer_Title"]
+   --
+   set the poly_Data [pTitle] of dView to pData
+   
+   # Position and Show
+   _PositionStack dView, pRect
+   _ShowStack dView, pToolContext
+   --
+   return dView
+end display_Poly
+
+command display_Tree someData, pTitle, pStackLabel, pFooterTitle, pExpanded, pRect, pToolContext
+   local foldedArray
    
    # Expand
    if pExpanded is not empty then
       put display_ConstructFoldState (pExpanded) into foldedArray
-      set the fold_State of treeView to foldedArray
    end if
    
-   # Position
-   switch pRect
-      case pRect is a number
-         set the stack_Width of dView to pRect
-         break
-      case pRect is a point
-         put item 1 of pRect + 200 into item 3 of pRect
-         put item 2 of pRect + 300 into item 4 of pRect
-         set the stack_Rect of dView to pRect
-         break
-      case pRect is a rect
-         set the stack_Rect of dView to pRect
-         break
-   end switch
+   # Create Invisible
+   display_InvisibleTool someData, pTitle, pStackLabel, foldedArray, "tree"
+   put the result into dView
+   put the tree_View of dView into treeView
    
-   # Show and set tool context
-   put the stack_Name of dView into cStackName
-   set the visible of stack cStackName to true
-   set the tool_Context of dView to pToolContext
+   # Set Footer Icons
+   _SetFooter dView, pFooterTitle
+   
+   # Should already be expanded
+   set the fold_State of treeView to foldedArray
+   
+   # Position and Show
+   _PositionStack dView, pRect
+   _ShowStack dView, pToolContext
    --
    return treeView
 end display_Tree
+
+private command _SetFooter dView, pFooterTitle
+   put the footer_View of dView into footerView
+   put pFooterTitle is not empty into isVisible
+   if isVisible then
+      set the footer_Title of footerView to pFooterTitle
+   end if
+   set the footer_IsVisible of footerView to isVisible
+end _SetFooter
+
+private command _ShowStack dView, pToolContext
+   put the stack_Name of dView into cStackName
+   set the visible of stack cStackName to true
+   set the tool_Context of dView to pToolContext
+end _ShowStack
 
 command display_StandardTool someData, pTitle, pStackLabel, pStyle, pRectHow, pFoldedArray, pToolContext
    display_InvisibleTool someData, pTitle, pStackLabel, pFoldedArray, pStyle
@@ -209,10 +319,10 @@ command display_Data sData, pTitle, pStackLabel, pDisplayView, pPalette, pTopLef
    else
       if exists (pDisplayView) is false then
          switch
-            case someContent is empty
+            case sData is empty
                put display_FindView (pStackLabel, pTitle) into pDisplayView
                break
-            case someContent is an array
+            case sData is an array
                put display_FirstOpenView ("Tree", pStackLabel, pTitle) into pDisplayView
                break
             default
@@ -324,9 +434,9 @@ command display_Lines sIndex, pTitle, pDoubleUp, pStackLabel, pPalette, pTopLeft
    put the index_View of dataView into indexView
    set the field_Style of indexView to "click"
    
-   # Set Rect
-   -- put the view_StackRect [oRect] of dataView into newRect
-   -- stack_Position cStackName, newRect
+   # Set Rect -- not using pTopLeft yet
+   put the view_StackRect [empty] of dataView into newRect
+   stack_Position cStackName, newRect
    
    # Show
    -- send "stack_Show dataView" to dataView in 2 ticks -- stops flickr
@@ -523,22 +633,17 @@ function display_FindCloned vName, displayStackLabel, pDisplayViewTitle
    return empty
 end display_FindCloned
 
-command display_InvisibleTool someData, pTitle, pStackLabel, pFoldedArray, pStyle
-   constant ArrayViewName = "View|Data"
-   
+command display_Invisible pTitle, pStackLabel, pStyle
    # Clone name
    put stack_CleanName ("Display" && pTitle) into cloneName
-   
-   # Ducktype
-   put someData is an array into isArray
    put there is a stack cloneName into stackExisted
-   
-   # Display data
    if stackExisted then
       put cloneName into cloneStackName
    else
-      stack_CloneInvisible ArrayViewName, cloneName
+      stack_CloneInvisible "View|Data", cloneName
       put the result into cloneStackName
+      
+      # Stack Label
       if pStackLabel is not empty then
          set the label of stack cloneStackName to pStackLabel
       end if
@@ -547,16 +652,34 @@ command display_InvisibleTool someData, pTitle, pStackLabel, pFoldedArray, pStyl
       set the style of stack cloneStackName to "palette"
    end if
    
-   if exists (control 1 of cd 1 of stack cloneStackName) then
-      put the long id of control 1 of cd 1 of stack cloneStackName into dView
-   else
+   if exists (control 1 of cd 1 of stack cloneStackName) is false then
       breakpoint
-      show stack cloneStackName
-      go to stack cloneStackName
       return "Error, could not find dView:" && cloneStackName
    end if
    
+   # DataView
+   put the long id of control 1 of cd 1 of stack cloneStackName into dView
+   
+   # ShowHow
+   if pStyle is not empty then
+      set the dataView_Style of dView to pStyle
+   end if
+   
+   # Title Colour
+   display_SetTitleColour dView
+   
+   # Title
+   set the title_Text of dView to pTitle
+   
+   return dView
+end display_Invisible
+
+command display_InvisibleTool someData, pTitle, pStackLabel, pFoldedArray, pStyle
+   display_Invisible pTitle, pStackLabel, pStyle
+   put the result into dView
+   
    # Display And Show
+   put someData is an array into isArray -- Ducktype
    if isArray is true then
       set the displayed_Data [pTitle] of dView to someData
       if pFoldedArray is an array then
@@ -569,14 +692,6 @@ command display_InvisibleTool someData, pTitle, pStackLabel, pFoldedArray, pStyl
       set the field_Style of indexView to "click"
       set the drop_Command of indexView to empty
    end if
-   
-   # ShowHow
-   if pStyle is not empty then
-      set the dataView_Style of dView to pStyle
-   end if
-   
-   # Title Colour
-   display_SetTitleColour dView
    
    return dView
 end display_InvisibleTool
